@@ -1,0 +1,14 @@
+description = {
+            'door': 'Okay, there is a door in this room. It is large, made of old wood, and imposing. There is a keyhole in the door. The door is not magical. Make the keyhole inconspicuous. The door is locked. The door unlocks if the player inserts key_001 into the keyhole.',
+            'doormat': 'Next to the door there\'s a doormat. Under the doormat is a concealed key. The doormat is flamable.',
+            'torch': 'This torch is the only light source in the room. It can be moved and can be put out, though it is plenty of fuel.',
+            'player_body': 'The player\'s own body, full of physical characteristics. The player is a regular, able adventurer. Keep track of things concerning the player body only, not other surounding objects or features. Always reply in first person, from the perspective of a game avatar.',
+            'inventory': 'The player set of possessions. It is initially empty',
+            'key_001': 'This is a key under the doormat. The key is hidden from the player. This is key_001',
+            'win_condition': 'An abstract entity to represent the win condition "the door is open". The player wins when they open the door or otherwise leave the room. This abstract object states whether that happened or not.',
+            'room': 'The description of the room itself based on all we\'ve discussed',
+        }
+        
+winning_message = "Congratulations! You've escaped the room!"
+
+losing_message = ""
