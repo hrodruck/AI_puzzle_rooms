@@ -1,0 +1,30 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Text Adventure</title>
+</head>
+<body>
+<textarea id="input" placeholder="Enter command..."></textarea>
+<button onclick="sendCommand()">Submit</button>
+<div id="output"></div>
+
+<script>
+function sendCommand() {
+    const command = document.getElementById('input').value;
+    document.getElementById('output').innerText += "\n\n Command sent! It takes a while for the AI to respond, sit tight!";
+    fetch('/api/game', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({command: command})
+    })
+    .then(response => response.json())
+    .then(data => {
+        document.getElementById('output').innerText = data.response;
+    });
+}
+</script>
+</body>
+</html>
