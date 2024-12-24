@@ -102,7 +102,7 @@ class Game():
         await self.chat_outer(process_input_prompt)
                
         questions_train_prompt = f"Summarize the questions that need to be transmitted to each objects in the game, if any, in order to determine if the player would be successful in their action, which is \"{p_in}\
-            Be consistent. You can ask more than one question per game object. Fell free to ask away!"
+            Be consistent. You can ask more than one question per game object. Make sure to include all the questions you thought of."
         await self.chat_outer(questions_train_prompt, self.game_engine_history)
         
         json_example ='{'
@@ -116,7 +116,7 @@ class Game():
             Remember to include all game objects in your json response. These are the game objects:{str(game_object_names)}\
             In your json, Use only one string per game object. Do not nest properties. Includde all game objects.\
             Example of json format: {json_example}\
-            You can make more than one question per object. Ask away!\
+            You can make more than one question per object. Make sure to include all the questions you thought of. Ask away!\
             \nMake sure you only ask questions, not statements."
             
         success_questions = await self.chat_outer(success_questions_prompt, self.game_engine_history, json=True)
@@ -142,7 +142,7 @@ class Game():
             order_prompt = f"It seems the player has failed in their action. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
             await self.chat_outer(order_prompt, self.game_engine_history)
             
-        broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects"
+        broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Do not disclose the nature of the win or lose conditions."
         broadcast_message = await self.chat_outer(broadcast_prompt, self.game_engine_history)
         broadcast_message += " Do not reply to this message. Merely use it for future responses"
         broadcast_dict = {}
@@ -203,4 +203,3 @@ class Game():
         pt_br_response = await(self.chat_outer(f'Translate this to Brazilian Portuguese: {response}'))
         #print (pt_br_response)
         return response
-
