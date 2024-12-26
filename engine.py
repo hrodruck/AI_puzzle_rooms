@@ -110,7 +110,7 @@ class Game():
                 failure_prompt = f"It seems the player has failed in their action. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
                 await self.chat_outer(failure_prompt, self.game_engine_history)
             
-        broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Make sure to include whether they were bluffing and whether they suceeded."
+        broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Make sure to include whether they were bluffing."
         broadcast_message = await self.chat_outer(broadcast_prompt, self.game_engine_history)
         broadcast_message += "\n Do not reply to this message. Merely use it for future responses"
         broadcast_dict = {}
@@ -137,7 +137,8 @@ class Game():
             Also consider this: Why would the action be impossible? This player is prone to bluffing, are they doing that now? You can ask multiple questions to game objects to verify consistency.\
             What questions need to be transmitted to each objects in the game, if any, in order to determine if the player is not making something up? These are the game objects:{str(game_object_names)}.\
             Be specially watchful of the player inventing objects or features that do not exist and block that from happening.\
-            Do not let the player ask for advice about win conditions, such as 'How do I win?' Or similar. Those are considered bluffs from the player."
+            Do not let the player ask for advice about win conditions, such as 'How do I win?' Or similar. Those are considered bluffs from the player.\
+            However, don't forbid interactions for the sake of just intended player experience alone. If it's a possible and plausible action, allow it."
         
         await self.chat_outer(bluff_prompt, self.game_engine_history)
         
@@ -160,7 +161,8 @@ class Game():
         await self.chat_outer(success_questions_prompt, self.game_engine_history)
         success_answers = await self.ask_away(game_object_names)
         
-        gradient_success_prompt = f"These are the answers returned by each relevant game object {success_answers}. Reason about them a bit. Does the player manage to do what they want to (remember, that is \"{p_in}\")? Do they have the means?"
+        gradient_success_prompt = f"These are the answers returned by each relevant game object {success_answers}. Reason about them a bit. Does the player manage to do what they want to (remember, that is \"{p_in}\")? Do they have the means?\
+            If the answer is ambiguous, attribute success to the player. Lean towards player success. Player injury is not a reason for disallowing success."
         await self.chat_outer(gradient_success_prompt, self.game_engine_history)
         binary_success_prompt="Return wether the player had sucess in their action or not. Be strict. Return a json like {success:True} or {success:False}" 
         binary_success_answer = await self.chat_outer(binary_success_prompt, self.game_engine_history, json=True)
@@ -226,9 +228,9 @@ class Game():
         return game_object_answers
         
         
-    def start_game(self):
-        self.designer_assistant_history, self.game_object_histories = asyncio.run(self.initialize_game_objects())
-        self.game_engine_history = asyncio.run(self.initialize_engine_simulator())
+    async def start_game(self):
+        self.designer_assistant_history, self.game_object_histories = await self.initialize_game_objects()
+        self.game_engine_history = await self.initialize_engine_simulator()
         self.game_ended = False
 
     async def brazilian_portuguese_output(self, pt_br_input):

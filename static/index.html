@@ -38,7 +38,7 @@ function runCommand(command){
 
 function sendCommand() {
     const command = document.getElementById('input').value;
-    document.getElementById('output').innerText += "\n\n Command sent! It takes a while for the AI to respond, a sound will ring when it's done. \n \n ";
+    document.getElementById('output').innerText += "\n\n Command sent! Command was \n"+ command + "\nIt takes a while for the AI to respond, a sound will ring when it's done. \n \n ";
     runCommand(command)
 }
 </script>
