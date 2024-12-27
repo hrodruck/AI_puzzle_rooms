@@ -28,7 +28,7 @@ python server.py 8081
 
 And open your browser to http://localhost:8081
 
-The easiest way to restart a game for now is by restarting the server.
+To restart a game, either restart the server or run new_game.sh
 
 # Hardware requirements
 
