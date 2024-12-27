@@ -17,6 +17,8 @@ python -m venv ai_puzzle_rooms_venv
 source ai_puzzle_rooms_venv/bin/activate
 cd AI_puzzle_rooms
 pip install -r requirements.txt
+chmod +x ollama/start_ollama.sh
+./ollama_start_ollama.sh
 ```
 
 Then
