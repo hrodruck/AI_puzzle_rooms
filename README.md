@@ -2,7 +2,7 @@
 
 To AI puzzle rooms repo. Currently, only local running is supported. Here is an example of what you might expect once the game is loaded:
 
-![image](assets/example_room_2.jpg)
+![image](example_room_2.jpg)
 
 
 # Instructions to run
