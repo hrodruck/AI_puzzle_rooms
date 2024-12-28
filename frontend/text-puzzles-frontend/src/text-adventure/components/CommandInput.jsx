@@ -7,7 +7,7 @@ const CommandInput = ({ command, setCommand, handleSubmit }) => {
         id="input" 
         value={command} 
         onChange={(e) => setCommand(e.target.value)} 
-        placeholder="You command (example: Look around again)" 
+        placeholder="You command (example: Look around)" 
         aria-label="Enter game command"
       />
       <button 

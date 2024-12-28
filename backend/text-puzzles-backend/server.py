@@ -1,11 +1,11 @@
 from engine import Game
-from rooms import *
+from rooms import rooms_dict
 from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Union
+from pydantic import BaseModel, Field
+from typing import Union, Dict, Any
 import asyncio
 import sys
 import os
@@ -35,7 +35,7 @@ class Command(BaseModel):
     command: str
     
 class Room(BaseModel):
-    room: Union[dict[str, str], str]
+    room: Union[str, Dict[str, Any]] = Field(..., description="Either a pre-made room name (string) or a custom room description (dictionary)")
 
 @app.post("/api/game")
 async def game_endpoint(command: Command):
@@ -51,26 +51,25 @@ async def start_game():
     room = app.state.room
     game.set_scene(room['description'], room['winning_message'], room['losing_message'])
     await game.start_game()
+    return {"status": "New game started"}
 
 @app.post("/api/choose-room")
 def choose_room(room: Room):
-    if isinstance(room, Room):
-        room = room.room
-    if isinstance(room, str):
-        app.state.room = rooms_dict[room]
-    else: #room should be a dictionary
-        app.state.room = room
+    if isinstance(room.room, dict):
+        app.state.room = room.room
+        return {"status": f"Chose custom room"}
+    else:
+        app.state.room = rooms_dict[room.room]
+        return {"status": f"Room chosen: {room.room}"}
     
     
 
 async def serve():
-    port_number = os.getenv('GAME_SERVER_PORT_NUMBER')
-    await start_game()
+    port_number = int(os.getenv('GAME_SERVER_PORT_NUMBER'))
     config = uvicorn.Config(app, host="0.0.0.0", port=port_number)
     server = uvicorn.Server(config)
     await server.serve()
 
 if __name__ == "__main__":
-    choose_room(rooms_dict['room_1'])
     asyncio.run(serve())
     
