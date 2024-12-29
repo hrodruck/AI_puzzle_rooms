@@ -30,9 +30,8 @@ python server.py
 
 Feel free to change FRONTEND_CORS_IP for more security
 
-To access the minimal local frontend, open your browser to http://localhost:8081
+To access the minimal local frontend, open your browser to http://localhost:8081. For that to work, you must have set GAME_SERVER_PORT_NUMBER to 8081, since that's what the minimal frontend expects.
 
-To restart a game, either restart the server or run new_game.sh
 
 ## Instructions to run the frontend
 
@@ -45,6 +44,8 @@ export VITE_REACT_APP_BACKEND_PORT=8081
 npm install
 npm run dev
 ```
+
+That's for dev mode. To bundle it up into files for production with VITE, instead of `npm run dev`, run `npm run build`. Files will be in the "dist" folder.
 
 
 # Hardware requirements
