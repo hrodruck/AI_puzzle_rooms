@@ -23,7 +23,7 @@ const TextAdventure = () => {
         <CustomInput 
         value={command} 
         onChange={(e) => setCommand(e.target.value)} 
-        placeholder="Enter your command here..."
+        placeholder="Enter your command here... (example: look around)"
         />
         <Button onClick={handleSubmit} disabled={!isGameStarted} >Submit Command</Button>
         
