@@ -30,12 +30,6 @@ app.add_middleware(
     allow_headers=["*"],
 )
 
-app.mount("/static", StaticFiles(directory="static"), name="static")
-
-@app.get("/")
-async def read_root():
-    return FileResponse("static/index.html")
-
 class Command(BaseModel):
     command: str
     
@@ -63,6 +57,9 @@ def choose_room(room: Room):
         # Handling pre-made room
         app.state.room = rooms_dict.get(room.room, {"description": "Unknown Room", "winning_message": "Default win", "losing_message": "Default lose"})
         return {"status": f"Room chosen: {room.room}"}
+
+
+app.mount("/", StaticFiles(directory="static", html=True), name="static")
 
 async def serve():
     port_number = int(os.getenv('GAME_SERVER_PORT_NUMBER'))
