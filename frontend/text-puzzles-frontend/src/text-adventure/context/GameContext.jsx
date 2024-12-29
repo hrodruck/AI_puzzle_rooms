@@ -4,7 +4,15 @@ import useGame from '../hooks/useGame';
 const GameContext = createContext();
 
 export const GameProvider = ({ children }) => {
-  const { output, error, setOutput, sendCommand, startGame, chooseRoom } = useGame();
+  const {
+    output, 
+    error, 
+    setOutput, 
+    sendCommand, 
+    startGame, 
+    chooseRoom,
+    isGameStarted, 
+    isRoomChosen } = useGame();
   
   return (
     <GameContext.Provider value={{ 
@@ -12,7 +20,9 @@ export const GameProvider = ({ children }) => {
       error, 
       sendCommand, 
       startGame, 
-      chooseRoom 
+      chooseRoom,
+      isGameStarted, 
+      isRoomChosen,
     }}>
       {children}
     </GameContext.Provider>

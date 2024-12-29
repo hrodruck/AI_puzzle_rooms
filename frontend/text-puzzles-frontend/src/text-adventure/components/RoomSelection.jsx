@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import useGame from '../hooks/useGame';
+import { useGameContext } from '../context/GameContext';
 
 const RoomSelection = () => {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [customRoom, setCustomRoom] = useState('');
-  const { chooseRoom } = useGame();
+  const { chooseRoom, isRoomChosen } = useGameContext();
   const navigate = useNavigate();
 
   const handleRoomSelect = (room) => {

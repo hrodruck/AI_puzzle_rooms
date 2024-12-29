@@ -4,6 +4,8 @@ import notificationSound from '../sounds/ping.wav';
 export default function useGame() {
   const [output, setOutput] = useState('Welcome! Processing the room... A sound will ring when room is loaded. \n \n');
   const [error, setError] = useState(null);
+  const [isRoomChosen, setIsRoomChosen] = useState(false);
+  const [isGameStarted, setIsGameStarted] = useState(false);
 
   const notifyReply = () => {
     const audio = new Audio(notificationSound);
@@ -35,6 +37,10 @@ export default function useGame() {
   };
 
   const startGame = async () => {
+    if (!isRoomChosen) {
+      setOutput(prevOutput => prevOutput + "\nPlease choose a room before starting the game.");
+      return;
+    }
     try {
       const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
         method: 'POST',
@@ -47,6 +53,7 @@ export default function useGame() {
       setOutput('New game started. Welcome back!\n');
       setOutput(prevOutput => prevOutput + "\n" + data.status);
       notifyReply();
+      setIsGameStarted(true);
     } catch (error) {
       setOutput(prevOutput => prevOutput + "\nFailed to start new game: " + error.message);
       setError(error.message);
@@ -69,6 +76,7 @@ export default function useGame() {
         const data = await response.json();
         setOutput(prevOutput => prevOutput + "\n" + data.status);
         notifyReply();
+        setIsRoomChosen(true);
       } catch (error) {
         setOutput(prevOutput => prevOutput + "\nFailed to choose room: " + error.message);
         setError(error.message);
@@ -76,5 +84,14 @@ export default function useGame() {
       }
     };
 
-  return { output, error, setOutput, sendCommand, startGame, chooseRoom };
+  return { 
+    output, 
+    error, 
+    setOutput, 
+    sendCommand, 
+    startGame, 
+    chooseRoom,
+    isGameStarted, 
+    isRoomChosen
+  };
 }

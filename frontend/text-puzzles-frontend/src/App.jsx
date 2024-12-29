@@ -4,34 +4,39 @@ import GlobalStyle from './GlobalStyle';
 import { Container, InnerContainer } from './GlobalStyle';
 import TextAdventure from './text-adventure/components/TextAdventure';
 import RoomSelection from './text-adventure/components/RoomSelection';
+import { GameProvider } from './text-adventure/context/GameContext';
 import { Nav, TabList, TabItem, TabLink, TabBar} from './App.styles';
 
 function App() {
   return (
-    <Router>
+  <GameProvider>
+        <Router>
         <GlobalStyle />
-        <Container>
-            <Nav>
-            <TabList>
-              <TabItem>
-                <TabLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Room Selection</TabLink>
-                <TabBar />
-              </TabItem>
-              <TabItem>
-                <TabLink to="/game" className={({ isActive }) => isActive ? "active" : ""}>Game</TabLink>
-                <TabBar />
-              </TabItem>
-            </TabList>
-            </Nav>
+            <Container>
             
-            <InnerContainer>
-                <Routes>
-                  <Route path="/" element={<RoomSelection />} />
-                  <Route path="/game" element={<TextAdventure />} />
-                </Routes>
-            </InnerContainer>
-        </Container>
-    </Router>
+                <Nav>
+                <TabList>
+                  <TabItem>
+                    <TabLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Room Selection</TabLink>
+                    <TabBar />
+                  </TabItem>
+                  <TabItem>
+                    <TabLink to="/game" className={({ isActive }) => isActive ? "active" : ""}>Game</TabLink>
+                    <TabBar />
+                  </TabItem>
+                </TabList>
+                </Nav>
+            
+                <InnerContainer>
+                    <Routes>
+                      <Route path="/" element={<RoomSelection />} />
+                      <Route path="/game" element={<TextAdventure />} />
+                    </Routes>
+                </InnerContainer>
+                
+            </Container>
+        </Router>
+   </GameProvider>
   );
 }
 
