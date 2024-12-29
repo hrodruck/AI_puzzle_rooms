@@ -33,7 +33,7 @@ Feel free to change FRONTEND_CORS_IP for more security
 To access the minimal local frontend, open your browser to http://localhost:8081. For that to work, you must have set GAME_SERVER_PORT_NUMBER to 8081, since that's what the minimal frontend expects.
 
 
-## Instructions to run the frontend
+## Instructions to run the frontend (as a separate server)
 
 Clone this repo and
 
@@ -46,6 +46,8 @@ npm run dev
 ```
 
 That's for dev mode. To bundle it up into files for production with VITE, instead of `npm run dev`, run `npm run build`. Files will be in the "dist" folder.
+
+This allows you to set a port different than 8081 for communication between backend and frontend.
 
 
 # Hardware requirements
