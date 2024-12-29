@@ -2,17 +2,24 @@ from fastapi import FastAPI, Request
 from fastapi.responses import FileResponse
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from pydantic import BaseModel
-from typing import Union
+from pydantic import BaseModel, Field
+from typing import Union, Dict, Any
 import asyncio
 import sys
 import os
 import uvicorn
+import json
 
 app = FastAPI()
 
+# Mock data for rooms
+rooms_dict = {
+    "room1": {"description": "Description of room1", "winning_message": "You win!", "losing_message": "You lose!"},
+    "room2": {"description": "Description of room2", "winning_message": "Victory!", "losing_message": "Defeat!"}
+}
+
 origins = [
-    '*',
+    os.getenv('FRONTEND_CORS_IP'),
 ]
 
 app.add_middleware(
@@ -33,38 +40,35 @@ class Command(BaseModel):
     command: str
     
 class Room(BaseModel):
-    room: Union[dict[str, str], str]
-
-# Mock game response
-async def mock_game_response(command):
-    return f"Processed command: {command}"
+    room: Union[str, Dict[str, Any]] = Field(..., description="Either a pre-made room name (string) or a custom room description (dictionary)")
 
 @app.post("/api/game")
 async def game_endpoint(command: Command):
-    # Mock the game response without actually calling game methods
-    response = await mock_game_response(command.command)
-    return {"response": response}
+    # Mocking game response
+    return {"response": f"Processed command: {command.command}"}
 
 @app.post("/api/new-game")
 async def start_game():
-    # Mock starting a new game
+    # Mocking game start
+    app.state.room = rooms_dict["room1"]  # Using room1 as default
     return {"status": "New game started"}
 
 @app.post("/api/choose-room")
 def choose_room(room: Room):
-    # Mock choosing a room
-    if isinstance(room.room, str):
+    if isinstance(room.room, dict):
+        # Handling custom room
+        app.state.room = room.room
+        return {"status": f"Chose custom room"}
+    else:
+        # Handling pre-made room
+        app.state.room = rooms_dict.get(room.room, {"description": "Unknown Room", "winning_message": "Default win", "losing_message": "Default lose"})
         return {"status": f"Room chosen: {room.room}"}
-    return {"status": "Room chosen"}
 
 async def serve():
     port_number = int(os.getenv('GAME_SERVER_PORT_NUMBER'))
-    await start_game()
     config = uvicorn.Config(app, host="0.0.0.0", port=port_number)
     server = uvicorn.Server(config)
     await server.serve()
 
 if __name__ == "__main__":
-    # Mock room selection
-    app.state.room = {"description": "A dark room", "winning_message": "You win!", "losing_message": "Game over!"}
     asyncio.run(serve())

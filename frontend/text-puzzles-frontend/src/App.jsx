@@ -1,15 +1,38 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
-import viteLogo from '/vite.svg'
-import './App.css'
-import TextAdventure from './text-adventure/TextAdventure';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Link} from 'react-router-dom';
+import GlobalStyle from './GlobalStyle';
+import { Container, InnerContainer } from './GlobalStyle';
+import TextAdventure from './text-adventure/components/TextAdventure';
+import RoomSelection from './text-adventure/components/RoomSelection';
+import { Nav, TabList, TabItem, TabLink, TabBar} from './App.styles';
 
 function App() {
   return (
-    <div>
-      <TextAdventure />
-    </div>
+    <Router>
+        <GlobalStyle />
+        <Container>
+            <Nav>
+            <TabList>
+              <TabItem>
+                <TabLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Room Selection</TabLink>
+                <TabBar />
+              </TabItem>
+              <TabItem>
+                <TabLink to="/game" className={({ isActive }) => isActive ? "active" : ""}>Game</TabLink>
+                <TabBar />
+              </TabItem>
+            </TabList>
+            </Nav>
+            
+            <InnerContainer>
+                <Routes>
+                  <Route path="/" element={<RoomSelection />} />
+                  <Route path="/game" element={<TextAdventure />} />
+                </Routes>
+            </InnerContainer>
+        </Container>
+    </Router>
   );
 }
 
-export default App
+export default App;

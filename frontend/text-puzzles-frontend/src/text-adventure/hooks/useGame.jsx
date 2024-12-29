@@ -2,7 +2,7 @@ import { useState } from 'react';
 import notificationSound from '../sounds/ping.wav';
 
 export default function useGame() {
-  const [output, setOutput] = useState('Welcome! Processing the room... You\'ll be able to issue commands once the room is loaded. \n \n');
+  const [output, setOutput] = useState('Welcome! Processing the room... A sound will ring when room is loaded. \n \n');
   const [error, setError] = useState(null);
 
   const notifyReply = () => {

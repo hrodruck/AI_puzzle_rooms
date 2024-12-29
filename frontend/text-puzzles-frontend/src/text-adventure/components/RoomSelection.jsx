@@ -1,13 +1,18 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
+import useGame from '../hooks/useGame';
 
-const RoomSelection = ({ onChooseRoom }) => {
+const RoomSelection = () => {
   const [selectedRoom, setSelectedRoom] = useState('');
   const [customRoom, setCustomRoom] = useState('');
+  const { chooseRoom } = useGame();
+  const navigate = useNavigate();
 
   const handleRoomSelect = (room) => {
+    chooseRoom(room);
     setSelectedRoom(room);
     setCustomRoom('');
-    onChooseRoom(room);
+    navigate('/game'); // Navigate to the game page after selecting a room
   };
 
   const handleCustomRoomSubmit = (e) => {
@@ -15,7 +20,8 @@ const RoomSelection = ({ onChooseRoom }) => {
     if (customRoom) {
       try {
         const roomObject = JSON.parse(customRoom);
-        onChooseRoom(roomObject);
+        chooseRoom(roomObject)
+        navigate('/game'); // Navigate to the game page after submitting a custom room
       } catch (error) {
         alert('Invalid JSON for custom room description. Please check your input.');
       }
@@ -23,7 +29,7 @@ const RoomSelection = ({ onChooseRoom }) => {
   };
 
   return (
-    <div style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
+    <div>
       <select value={selectedRoom} onChange={(e) => handleRoomSelect(e.target.value)}>
         <option value="">Choose a room</option>
         <option value="room_1">Room One</option>
