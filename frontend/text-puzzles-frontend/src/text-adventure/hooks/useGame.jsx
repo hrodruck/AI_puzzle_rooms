@@ -22,6 +22,7 @@ export default function useGame() {
         headers: {
           'Content-Type': 'application/json',
         },
+        credentials: 'include',
         body: JSON.stringify({command})
       });
       
@@ -36,53 +37,57 @@ export default function useGame() {
     }
   };
 
-  const startGame = async () => {
-    if (!isRoomChosen) {
+const startGame = async () => {
+  if (!isRoomChosen) {
       setOutput(prevOutput => prevOutput + "\nPlease choose a room before starting the game.");
-      return;
-    }
-    try {
-      const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
-        method: 'POST',
-      });
-      
-      if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-      const data = await response.json();
-      
-      // Clear the output before adding the new game message
-      setOutput('New game started. Welcome back!\n');
-      setOutput(prevOutput => prevOutput + "\n" + data.status);
-      notifyReply();
-      setIsGameStarted(true);
-    } catch (error) {
-      setOutput(prevOutput => prevOutput + "\nFailed to start new game: " + error.message);
-      setError(error.message);
-      console.error(error);
-    }
-  };
+    return;
+  }
+  setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt takes a while for the AI to respond, a new sound will always ring when it's done. \n \n");
+  
+  try {
+    const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
+      method: 'POST',
+      credentials: 'include' // Include cookies in the request
+    });
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    
+    // Clear the output before adding the new game message
+    setOutput('New game started. Welcome back!\n');
+    setOutput(prevOutput => prevOutput + "\n" + data.message);
+    notifyReply();
+    setIsGameStarted(true);
+  } catch (error) {
+    setOutput(prevOutput => prevOutput + "\nFailed to start new game: " + error.message);
+    setError(error.message);
+    console.error(error);
+  }
+};
 
-  const chooseRoom = async (room) => {
-      try {
-        const roomData = typeof room === 'string' ? { room } : room; // If it's a string, wrap it in an object, otherwise use the object directly
-        const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/choose-room`, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify(roomData)
-        });
-        
-        if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
-        const data = await response.json();
-        setOutput(prevOutput => prevOutput + "\n" + data.status);
-        notifyReply();
-        setIsRoomChosen(true);
-      } catch (error) {
-        setOutput(prevOutput => prevOutput + "\nFailed to choose room: " + error.message);
-        setError(error.message);
-        console.error(error);
-      }
-    };
+const chooseRoom = async (room) => {
+  try {
+    const roomData = typeof room === 'string' ? { room } : room; // If it's a string, wrap it in an object, otherwise use the object directly
+    const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/choose-room`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      credentials: 'include', // Include cookies in the request
+      body: JSON.stringify(roomData)
+    });
+    
+    if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
+    const data = await response.json();
+    setOutput(prevOutput => prevOutput + "\n" + data.message);
+    notifyReply();
+    setIsRoomChosen(true);
+  } catch (error) {
+    setOutput(prevOutput => prevOutput + "\nFailed to choose room: " + error.message);
+    setError(error.message);
+    console.error(error);
+  }
+};
 
   return { 
     output, 

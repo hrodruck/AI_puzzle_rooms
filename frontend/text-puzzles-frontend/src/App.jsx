@@ -9,7 +9,6 @@ import { Nav, TabList, TabItem, TabLink, TabBar} from './App.styles';
 
 function App() {
   return (
-  <GameProvider>
         <Router>
         <GlobalStyle />
             <Container>
@@ -36,7 +35,6 @@ function App() {
                 
             </Container>
         </Router>
-   </GameProvider>
   );
 }
 

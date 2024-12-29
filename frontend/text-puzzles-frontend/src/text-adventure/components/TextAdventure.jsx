@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import GameOutput from './GameOutput';
-import { Button, CustomInput, OutputBox } from './TextAdventure.styles';
+import { Button, CustomInput, OutputBox } from './TextAdventure.Styles';
 import { useGameContext } from '../context/GameContext';
 
 const TextAdventure = () => {
