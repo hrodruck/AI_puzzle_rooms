@@ -5,7 +5,7 @@ To AI puzzle rooms repo. Currently, only local running is supported. Here is an 
 ![image](example_room_2.jpg)
 
 
-## Instructions to run the backend
+## Instructions to run the backend (with minimal local frontend)
 
 Make sure you have `ollama serve`running.
 
@@ -24,10 +24,13 @@ chmod +x ollama/start_ollama.sh
 Then
 ```
 export GAME_SERVER_PORT_NUMBER=8081
+export FRONTEND_CORS_IP=*
 python server.py
 ```
 
-And open your browser to http://localhost:8081
+Feel free to change FRONTEND_CORS_IP for more security
+
+To access the minimal local frontend, open your browser to http://localhost:8081
 
 To restart a game, either restart the server or run new_game.sh
 
@@ -37,6 +40,8 @@ Clone this repo and
 
 ```
 cd AI_puzzle_rooms/frontend/text-puzzles-frontend
+export VITE_REACT_APP_BACKEND_URL=http://localhost
+export VITE_REACT_APP_BACKEND_PORT=8081
 npm install
 npm run dev
 ```
