@@ -61,7 +61,7 @@ async def game_endpoint(command: Command, session: Dict = Depends(get_session)):
 async def start_game(request: Request, session: Dict = Depends(get_session)):    
     if session['room'] is None:
         return JSONResponse(content={"status": "error", "message": "No room selected"})
-    print (session.get('session_id'))
+    print (f"starting game from session {session.get('session_id')}")
     async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(f"http://{os.getenv('GAME_SERVER_IP')}:{os.getenv('GAME_SERVER_PORT_NUMBER')}/api/start-game", 
                                      json={'room': session['room'], "session_id": session.get('session_id')})

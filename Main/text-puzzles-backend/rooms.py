@@ -10,7 +10,7 @@ rooms_dict['room_1'] = {
             'inventory': 'The player set of possessions. It is initially empty',
             'key_001': 'This is a key under the doormat. The key is hidden from the player. This is key_001',
             'win_condition': 'An abstract entity to represent the win condition "the door is open". The player wins when they open the door or otherwise leave the room. This abstract object states whether that happened or not.',
-            'room': 'The description of the room itself based on all we\'ve discussed',
+            'room_itself': 'The description of the room itself based on all we\'ve discussed',
         },
             
         'winning_message': "Congratulations! You've escaped the room!",

@@ -20,7 +20,19 @@ const GlobalStyle = createGlobalStyle`
   body {
     font-family: Arial, sans-serif;
     background-color: #f9f9f9;
+    color: #333333;
   }
+  
+  input {
+    background-color: #ffffff;
+    color: #333333;
+  }
+  
+  textarea {
+    background-color: #ffffff;
+    color: #333333;
+  }
+  
 `;
 
 export const Container = styled.div`
@@ -50,5 +62,6 @@ export const InnerContainer = styled.div`
   justify-content: flex-start; // Align items at the top of the container
   min-height: 0; // This ensures the flex container doesn't grow beyond its parent
 `;
+
 
 export default GlobalStyle;
