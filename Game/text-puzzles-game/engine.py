@@ -6,7 +6,7 @@ import re
 import copy
 from sys import exit
 from ollama import AsyncClient
-from openai import OpenAI
+from openai import AsyncOpenAI
 
 class Game():
 
@@ -38,30 +38,31 @@ class Game():
         return json.loads(json_text)
 
     async def chat_openai_backbone(self, history, json=False):
-        openai = OpenAI(
+        openai = AsyncOpenAI(
             api_key=os.getenv('OPEN_API_KEY'),
             base_url=os.getenv('OPEN_API_URL'),
         )
-        #model="google/gemma-2-27b-it" #this model can handle structured generation well on ollama, but fails to do so in other endpoints. Since ollama uses outlines.
-        #model="Qwen/Qwen2.5-72B-Instruct" #a plausible option
+        
         model_str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+        
         if json:
-            chat_completion = openai.chat.completions.create(
-                model = model_str,
+            chat_completion = await openai.chat.completions.create(
+                model=model_str,
                 max_tokens=16834,
                 messages=history,
                 response_format={"type": "json"},
                 presence_penalty=self.presence_penalty_json
             )
         else:
-            chat_completion = openai.chat.completions.create(
+            chat_completion = await openai.chat.completions.create(
                 model=model_str,
                 max_tokens=16834,
                 messages=history,
-                presence_penalty = self.presence_penalty
+                presence_penalty=self.presence_penalty
             )
+        
         content = chat_completion.choices[0].message.content
-        print (content)
+        print(content)
         print('.')
         return content
 
