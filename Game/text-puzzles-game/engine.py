@@ -11,7 +11,7 @@ from openai import AsyncOpenAI
 class Game():
 
     def __init__(self):
-        self.openai_backbone = True
+        self.openai_backbone = bool(os.getenv('USE_EXTERNAL_BACKBONE'))
         self.general_forgetting_threshold = 25000 #in characters
         self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
         self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
