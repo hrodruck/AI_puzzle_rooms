@@ -3,6 +3,7 @@ import json
 import copy
 import os
 import re
+import copy
 from sys import exit
 from ollama import AsyncClient
 from openai import OpenAI
@@ -11,6 +12,9 @@ class Game():
 
     def __init__(self):
         self.openai_backbone = True
+        self.general_forgetting_threshold = 25000 #in characters
+        self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
+        self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
         print ("Engine is running. Use set_scene and start_game!")
 
     def extract_json_between_markers(self, text):
@@ -38,17 +42,23 @@ class Game():
             api_key=os.getenv('OPEN_API_KEY'),
             base_url=os.getenv('OPEN_API_URL'),
         )
+        #model="google/gemma-2-27b-it" #this model can handle structured generation well on ollama, but fails to do so in other endpoints. Since ollama uses outlines.
+        #model="Qwen/Qwen2.5-72B-Instruct" #a plausible option
+        model_str = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
         if json:
             chat_completion = openai.chat.completions.create(
-                #model="google/gemma-2-27b-it", #this model can handle structured generation well on ollama, but fails to do so in other endpoints. Since ollama uses outlines.
-                model="Qwen/Qwen2.5-72B-Instruct",
+                model = model_str,
+                max_tokens=16834,
                 messages=history,
                 response_format={"type": "json"},
+                presence_penalty=self.presence_penalty_json
             )
         else:
             chat_completion = openai.chat.completions.create(
-                model="google/gemma-2-27b-it",
+                model=model_str,
+                max_tokens=16834,
                 messages=history,
+                presence_penalty = self.presence_penalty
             )
         content = chat_completion.choices[0].message.content
         print (content)
@@ -68,8 +78,6 @@ class Game():
                 content = part['message']['content']
                 print(content, end='', flush=True)
                 full_response += content
-
-        history.append({'role': 'assistant', 'content': full_response})
         print('.')  # Add a newline after the response
         return full_response
     
@@ -79,14 +87,20 @@ class Game():
         else:
             return await self.chat_ollama_backbone(history, json)
 
-    async def chat_outer(self, user_message, user_history=[], json=False):
+    async def chat_outer(self, user_message, user_history=[], json=False, keep_history=True):
         #repeat system prompt
         if len(user_history)>0 and user_history[0]['role']=='system':
             user_history.append(user_history[0])
         user_history.append(
             {'role': 'user', 'content':user_message}
         )
-        return await self.chat_inner(user_history, json)
+        response = await self.chat_inner(user_history, json)
+        user_history.append({'role': 'assistant', 'content': response})
+        if not keep_history:
+            user_history = user_history[:-3]
+        elif len(str(user_history))>self.general_forgetting_threshold:
+            user_history = user_history[:2] + user_history[2+6:] # remember the very (system and user messages: 2 messages) and forget some messages in the middle (system, user, assistant: a multiple of three)
+        return response
 
     def set_scene(self, scene_description, winning_message= None, losing_message=None):
         self.scene_objects_prompts = scene_description
@@ -103,7 +117,7 @@ class Game():
         
         game_object_template = {
             'role': 'system',
-            'content': 'You simulate an object within a room for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed.',
+            'content': 'You simulate an object within a room for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Be brief.',
         }
         self.game_object_histories = {}
             
@@ -126,11 +140,11 @@ class Game():
         return game_state
             
     async def initialize_engine_simulator(self):
-        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. I am the game designer.'
+        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be brief unless talking directly to the player. I am the game designer.'
         game_state = await self.get_game_state()
         game_string = str(game_state)
         self.game_engine_history = [
-            {'role':'system', 'content':'game_engine_sys_prompt'},
+            {'role':'system', 'content':game_engine_sys_prompt},
             {'role':'user', 'content': f'This is the current game state: {game_string}'},
         ]
         return self.game_engine_history
@@ -139,6 +153,9 @@ class Game():
         
         if self.game_ended:
             return "The game has ended!"
+        
+        frozen_game_engine_history = copy.deepcopy(self.game_engine_history)
+        print ([x['role'] for x in frozen_game_engine_history])
         
         game_object_names = list(self.game_object_histories.keys())
         
@@ -151,7 +168,7 @@ class Game():
                     json_example += f'"{s}": Move aside.'
                 json_example += '}'
                 
-                order_prompt = f"It seems the player succeeded in their action. What orders should be given to each game object?\
+                order_prompt = f"It seems the player succeeded in their action. The action I'm talking about is {p_in}. What orders should be given to each game object?\
                     Remember to include all game objects in your json response. These are the game objects:{str(game_object_names)}\
                     In your json, Use only one string per game object. Do not nest properties. Include all game objects, except win and lose conditions.\
                     Example of json format: {json_example}"
@@ -159,11 +176,13 @@ class Game():
                 dict_orders = self.load_json_from_llm(json_orders)
                 await self.send_broadcast(dict_orders)
             else:
-                failure_prompt = f"It seems the player has failed in their action. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
+                failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {p_in}. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
                 await self.chat_outer(failure_prompt, self.game_engine_history)
-            
+        else:
+            failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {p_in}. The game has determined that the player was somehow bluffing or attempting an impossible feat. Pay special attention to mentions to objects that don't exist."
+            await self.chat_outer(failure_prompt, self.game_engine_history)
         broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Make sure to include whether they were bluffing."
-        broadcast_message = await self.chat_outer(broadcast_prompt, self.game_engine_history)
+        broadcast_message = await self.chat_outer(broadcast_prompt, self.game_engine_history, keep_history=False)
         broadcast_message += "\n Do not reply to this message. Merely use it for future responses"
         broadcast_dict = {}
         for k in self.game_object_histories.keys():
@@ -172,14 +191,30 @@ class Game():
         
         game_string = str (await self.get_game_state())
         
-        response_prompt = f"This is the state of every object in the game:{game_string}\
-            Relay the state of affairs as a result of the player's actions to the player. Include interesting details that have been previously mentioned, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why. Be verbose."
-        response = await self.chat_outer(response_prompt, self.game_engine_history)
+        
+        self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
+        
+        response_prompt = f"This is the new state of every object in the game:{game_string}\
+            This is the message that was sent to all game objects to tell them of the player's actions: {broadcast_message}\
+            Relay the state of affairs as a result of the player's actions to the player. Include interesting details about the game state, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why.\
+            Do not reveal secret or confidential game information, such as a hidden object."
+        response_to_player = await self.chat_outer(response_prompt, self.game_engine_history, keep_history=False)
         
         ending_message = await self.check_ending()
-        response += ending_message
+        response_to_player += ending_message
         
-        return response
+        self.game_engine_history = copy.deepcopy(frozen_game_engine_history) #reset again
+        
+        update_game_history_prompt = f"This is what the player saw since last turn and the last state of each object. Update the game history accordingly:\n\
+            This is ground truth data about the game.\
+            What the player saw:\n{response_to_player}\n\
+            Game object states:{game_string}\n\n"
+        
+        
+        
+        await self.chat_outer(update_game_history_prompt, self.game_engine_history)
+        
+        return response_to_player
 
     async def sanity_bluff_check(self, p_in, game_object_names):
         bluff_prompt = f"This is the input from the player: {p_in}\
@@ -192,6 +227,7 @@ class Game():
             Do not let the player ask for advice about win conditions, such as 'How do I win?' Or similar. Those are considered bluffs from the player.\
             However, don't forbid interactions for the sake of just intended player experience alone. If it's a possible and plausible action, allow it.\
             Do not block the player action because of danger. This is a game and the player should be able to put themselves in danger if they so choose."
+        frozen_game_engine_history = copy.deepcopy(self.game_engine_history)
         
         await self.chat_outer(bluff_prompt, self.game_engine_history)
         
@@ -204,6 +240,8 @@ class Game():
         binary_bluff_answer = await self.chat_outer(binary_bluff_prompt, self.game_engine_history, json=True)
         dict_binary_bluff = self.load_json_from_llm(binary_bluff_answer)
         binary_bluff = dict_binary_bluff['bluff']
+        
+        self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
         return binary_bluff
     
     async def ingame_success_check(self, p_in, game_object_names):
@@ -211,6 +249,8 @@ class Game():
             What questions would need to be asked of those game objects to determine if the player succeeds?\
             This is the list of game objects: {game_object_names}\
             This is what the player said:{p_in}"
+        #frozen_game_engine_history = copy.deepcopy(self.game_engine_history)
+        
         await self.chat_outer(success_questions_prompt, self.game_engine_history)
         success_answers = await self.ask_away(game_object_names)
         
@@ -221,6 +261,8 @@ class Game():
         binary_success_answer = await self.chat_outer(binary_success_prompt, self.game_engine_history, json=True)
         dict_binary_sucess = self.load_json_from_llm(binary_success_answer)
         binary_success = dict_binary_sucess['success']
+        
+        #self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
         return binary_success
 
     async def ask_away(self, game_object_names):
@@ -244,30 +286,37 @@ class Game():
             
         json_questions = await self.chat_outer(questions_prompt, self.game_engine_history, json=True)
         dict_questions = self.load_json_from_llm(json_questions)
+        frozen_game_object_histories = self.game_object_histories
         dict_answers = await self.send_broadcast(dict_questions)
+        self.game_object_histories = frozen_game_object_histories
         return str(dict_answers)
 
     async def check_ending(self):
+        frozen_game_engine_history = copy.deepcopy(self.game_engine_history)
+        
         ending_train_prompt = "Now let's take a step back and evaluate if the player has achieved their final goal. Please don't respond, more details will be given in the next message"
         await self.chat_outer (ending_train_prompt, self.game_engine_history)
         
         ending_prompt = f"This is the state of the condition: {self.game_object_histories['win_condition']}" + "If the state of 'win condition' says the player wins, say so.\
-            Return a json like {won:True} or {won:False}"
+            Return a json like {won:True} or {won:False}. Do not mention anything else, only a json with the \"won\" key and either the value True or the value False."
         ending_response = await self.chat_outer(ending_prompt, self.game_engine_history, json=True)
         ending_dict = self.load_json_from_llm(ending_response)
         if ending_dict['won']:
             print (self.winning_message)
             self.game_ended=True
+            self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
             return '\n' + self.winning_message
         elif 'loss_condition' in self.game_object_histories.keys():
             ending_prompt = f"This is the state of the condition: {self.game_object_histories['loss_condition']}" + "If the state of 'lose condition' says the player loses, say so.\
-            Return a json like {lost:True} or {lost:False}"
+            Return a json like {lost:True} or {lost:False}. Do not mention anything else, only a json with the \"lost\" key and either the value True or the value False."
             ending_response = await self.chat_outer(ending_prompt, self.game_engine_history, json=True)
             ending_dict = self.load_json_from_llm(ending_response)
             if ending_dict['lost']:
                 print(self.losing_message)
                 self.game_ended = True
+                self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
                 return '\n' + self.losing_message
+        self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
         return ''
         
     async def send_broadcast(self, dict_messages):

@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState,useRef     } from 'react';
 import notificationSound from '../sounds/ping.wav';
 
 export default function useGame() {

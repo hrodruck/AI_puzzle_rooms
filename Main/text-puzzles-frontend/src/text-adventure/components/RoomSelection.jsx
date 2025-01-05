@@ -156,6 +156,7 @@ const RoomSelection = () => {
         <option value="">Choose a room</option>
         <option value="room_1">Room One</option>
         <option value="room_2">Room Two</option>
+        <option value="experimental_room_3">Experimental Room (3)</option>
       </RoomSelect>
 
       <h3>Or Create Your Custom Room:</h3> <ImportButton 
