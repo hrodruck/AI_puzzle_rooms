@@ -1,4 +1,4 @@
-import { useState,useRef     } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import notificationSound from '../sounds/ping.wav';
 
 export default function useGame() {
@@ -7,6 +7,13 @@ export default function useGame() {
   const [isRoomChosen, setIsRoomChosen] = useState(false);
   const [isGameStarted, setIsGameStarted] = useState(false);
   const [isProcessing, setIsProcessing] = useState(false);
+
+  useEffect(() => {
+    if (isGameStarted){
+        sendCommand('Describe the room');
+    }
+      
+  }, [isGameStarted]);
 
   const notifyReply = () => {
     const audio = new Audio(notificationSound);
@@ -17,13 +24,13 @@ export default function useGame() {
 
   const sendCommand = async (command) => {
     if (!isGameStarted){
-        setOutput(prevOutput => prevOutput + "\n Please wait, game is still starting.");
+        setOutput(prevOutput => prevOutput + "\n... Please wait, game is still starting.\n");
         return;
     }
      
      if (isProcessing) {
         // If already processing, do not start another command
-        setOutput(prevOutput => prevOutput + "\n\n Please wait, the AI is thinking!");
+        setOutput(prevOutput => prevOutput + "\n... Please wait, the AI is thinking, and it can be slow!\n");
         return;
     }
     
@@ -39,7 +46,6 @@ export default function useGame() {
         credentials: 'include',
         body: JSON.stringify({command})
       });
-      
       if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
       const data = await response.json();
       setOutput(prevOutput => prevOutput + data.response);
@@ -59,15 +65,20 @@ const startGame = async () => {
     return;
   }
   
+  if (isProcessing && !isGameStarted){
+        setOutput(prevOutput => prevOutput + "\n...Please wait, game is still starting (it takes long).\n");
+        return;
+    }
+  
   if (isProcessing) {
         // If already processing, do not start another game
-        setOutput(prevOutput => prevOutput + "\n\n Please wait, the AI is thinking!");
+        setOutput(prevOutput => prevOutput + "\n...Please wait, the AI is thinking, and it can be slow!\n");
         return;
     }
     
   setIsProcessing(true);
   
-  setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt takes a while for the AI to respond, a sound will ring again when it's done. \n \n");
+  setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt can take minutes for the AI to respond, a sound will ring when it's done. \n");
   
   try {
     const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
@@ -78,13 +89,14 @@ const startGame = async () => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     
-    
-    if (data.status == 'success'){
-        setOutput('New game started. Welcome back!\n'); // Clear the output as a new game starts
-        setIsGameStarted(true);
-    }
     setOutput(prevOutput => prevOutput + "\n" + data.message);
     notifyReply();
+    setIsProcessing(false);
+    if (data.status == 'success'){
+        setOutput(data.message); // Clear the output as a new game starts
+        setOutput(prevOutput => prevOutput + '\n Generating room description... (a sound will ring when it\'s done)\n'); 
+        setIsGameStarted(true);
+    }
   } catch (error) {
     setOutput(prevOutput => prevOutput + "\nFailed to start new game: " + error.message);
     setError(error.message);
@@ -110,7 +122,6 @@ const chooseRoom = async (room) => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     setOutput(prevOutput => prevOutput + "\n" + data.message);
-    notifyReply();
     setIsRoomChosen(true);
   } catch (error) {
     setOutput(prevOutput => prevOutput + "\nFailed to choose room: " + error.message);
@@ -127,6 +138,7 @@ const chooseRoom = async (room) => {
     startGame, 
     chooseRoom,
     isGameStarted, 
-    isRoomChosen
+    isRoomChosen,
+    isProcessing,
   };
 }

@@ -12,7 +12,8 @@ export const GameProvider = ({ children }) => {
     startGame, 
     chooseRoom,
     isGameStarted, 
-    isRoomChosen } = useGame();
+    isRoomChosen,
+    isProcessing, } = useGame();
   
   return (
     <GameContext.Provider value={{ 
@@ -23,6 +24,7 @@ export const GameProvider = ({ children }) => {
       chooseRoom,
       isGameStarted, 
       isRoomChosen,
+      isProcessing,
     }}>
       {children}
     </GameContext.Provider>

@@ -44,7 +44,6 @@ rooms_dict['experimental_room_3'] = {
         "description": {
           "win_condition": "An abstract entity to represent the win condition 'the water in the kettle has been boiled'. The player wins when they open the door or otherwise leave the room. This abstract object states whether that happened or not.",
           "loss_condition": "An abstract entity to represent a loss condition. That happens if the player is too injured to continue. Let the player be injured as a consequence of their actions. Example of injury that would lose the game: breaking a leg. Example of injury that would be okay and would let the game continue: getting a sore throat.",
-          "room_itself": "A modern-day kitchen with normal kitchen utensils and a broken stove. It is impossible to leave the kitchen; the challenge must be completed within it.",
           "Stove": "A stove that does not turn on",
           "kettle": "A kettle. It is on the stove and it contains water",
           "Sign": "There is a sign. It is big and obvious and very noticeable. It reads: \"boil the water to win the game\";",
@@ -52,6 +51,7 @@ rooms_dict['experimental_room_3'] = {
           "kitchen utensils": "The normal utensils you'd expect from a kitchen: metal and wooden spoons, pans, a sink, dishcloth, etc... Basically anything you'd find in a normal kitchen, even if not in the explicit description",
           "Electrical outlet": "There is an electrical outlet in this room.",
           "Magic": "An abstract object representing the magical powers of the player. The player is a capable mage, let their creativity shine! The player cannot perform advanced magic like summoning a dragon or talking to the gods."
+          "room_itself": "A modern-day kitchen with normal kitchen utensils and a broken stove. It is impossible to leave the kitchen; the challenge must be completed within it.",
         },
         "winning_message": "Congratulations! You've met the condition!",
         "losing_message": "You are too injured to continue!"

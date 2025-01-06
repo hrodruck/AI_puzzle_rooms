@@ -33,8 +33,6 @@ class CommandData(BaseModel):
 sessions = {}
 
 async def get_session(session_id: str):
-    if session_id not in sessions:
-        sessions[session_id] = Game()
     return sessions[session_id]
 
 @app.post("/api/process-input")
@@ -47,7 +45,8 @@ async def process_input(data: CommandData):
 @app.post("/api/start-game")
 async def start_game(data: RoomData):
     try:
-        game = await get_session(data.session_id)
+        game = Game() #start a new instance anyways, since the player could be restarting their game
+        sessions[data.session_id] = game #not elegant, but short
         room = data.room
         room_description = room['description']
         room_description.pop('customObjects', None) #weirdness from the frontend regarding custom rooms
@@ -56,8 +55,9 @@ async def start_game(data: RoomData):
         game.set_scene(room_description, room['winning_message'], room['losing_message'])
         print(data.session_id)
         await game.start_game()
-        return JSONResponse(content={"status": "success", "message": "New game started! Feel free to enter your commands!"})
-    except:
+        return JSONResponse(content={"status": "success", "message": "New game started!"})
+    except Exception as e:
+        print(e)
         return JSONResponse(content={"status": "error", "message": "Could not start new game, please try again."})
 
 async def serve():

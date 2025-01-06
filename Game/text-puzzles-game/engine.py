@@ -15,6 +15,7 @@ class Game():
         self.general_forgetting_threshold = 25000 #in characters
         self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
         self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
+        self.game_ended = False
         print ("Engine is running. Use set_scene and start_game!")
 
     def extract_json_between_markers(self, text):
@@ -202,19 +203,15 @@ class Game():
         response_to_player = await self.chat_outer(response_prompt, self.game_engine_history, keep_history=False)
         
         ending_message = await self.check_ending()
-        response_to_player += ending_message
-        
-        self.game_engine_history = copy.deepcopy(frozen_game_engine_history) #reset again
-        
-        update_game_history_prompt = f"This is what the player saw since last turn and the last state of each object. Update the game history accordingly:\n\
-            This is ground truth data about the game.\
-            What the player saw:\n{response_to_player}\n\
-            Game object states:{game_string}\n\n"
-        
-        
-        
-        await self.chat_outer(update_game_history_prompt, self.game_engine_history)
-        
+        if len(ending_message)>0:
+            response_to_player = ending_message
+        else:
+            self.game_engine_history = copy.deepcopy(frozen_game_engine_history) #reset again
+            update_game_history_prompt = f"This is what the player saw since last turn and the last state of each object. Update the game history accordingly:\n\
+                This is ground truth data about the game.\
+                What the player saw:\n{response_to_player}\n\
+                Game object states:{game_string}\n\n"
+            await self.chat_outer(update_game_history_prompt, self.game_engine_history)
         return response_to_player
 
     async def sanity_bluff_check(self, p_in, game_object_names):
@@ -334,7 +331,6 @@ class Game():
     async def start_game(self):
         self.designer_assistant_history, self.game_object_histories = await self.initialize_game_objects()
         self.game_engine_history = await self.initialize_engine_simulator()
-        self.game_ended = False
 
     async def brazilian_portuguese_output(self, pt_br_input):
         eng_input = await self.chat_outer(f'Translate this to English: {pt_br_input}')
