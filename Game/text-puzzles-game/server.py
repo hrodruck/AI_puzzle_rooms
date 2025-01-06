@@ -46,16 +46,19 @@ async def process_input(data: CommandData):
 
 @app.post("/api/start-game")
 async def start_game(data: RoomData):
-    game = await get_session(data.session_id)
-    room = data.room
-    room_description = room['description']
-    room_description.pop('customObjects', None) #weirdness from the frontend regarding custom rooms
-    room_description.pop('winning_message', None)
-    room_description.pop('losing_message', None)
-    game.set_scene(room_description, room['winning_message'], room['losing_message'])
-    print(data.session_id)
-    await game.start_game()
-    return JSONResponse(content={"status": "success", "message": "New game started! Feel free to enter your commands!"})
+    try:
+        game = await get_session(data.session_id)
+        room = data.room
+        room_description = room['description']
+        room_description.pop('customObjects', None) #weirdness from the frontend regarding custom rooms
+        room_description.pop('winning_message', None)
+        room_description.pop('losing_message', None)
+        game.set_scene(room_description, room['winning_message'], room['losing_message'])
+        print(data.session_id)
+        await game.start_game()
+        return JSONResponse(content={"status": "success", "message": "New game started! Feel free to enter your commands!"})
+    except:
+        return JSONResponse(content={"status": "error", "message": "Could not start new game, please try again."})
 
 async def serve():
     port_number = int(os.getenv('GAME_SERVER_PORT_NUMBER'))

@@ -38,19 +38,18 @@ sessions = {}
 
 async def get_session(request: Request) -> Dict:
     session_id = request.cookies.get("session_id")
-    print (f'Main server: {session_id=}')
     if not session_id:
         session_id = os.urandom(24).hex()
         sessions[session_id] = {"room": None, "session_id": session_id}
-        return {"new_session": True, "session_id": session_id}
     if session_id not in sessions:
         sessions[session_id] = {"room": None, "session_id": session_id}
+    print (f'Main server: {session_id=}')
     return sessions[session_id]
 
 @app.post("/api/game")
 async def game_endpoint(command: Command, session: Dict = Depends(get_session)):
     if session['room'] is None:
-        return JSONResponse(content={"status": "error", "message": "No room selected"})
+        return JSONResponse(content={"status": "error", "message": "No room detected. Please try selecting again"})
     
     async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(f"http://{os.getenv('GAME_SERVER_IP')}:{os.getenv('GAME_SERVER_PORT_NUMBER')}/api/process-input", 
@@ -60,14 +59,12 @@ async def game_endpoint(command: Command, session: Dict = Depends(get_session)):
 @app.post("/api/new-game")
 async def start_game(request: Request, session: Dict = Depends(get_session)):    
     if session['room'] is None:
-        return JSONResponse(content={"status": "error", "message": "No room selected"})
+        return JSONResponse(content={"status": "error", "message": "No room detected. Please try selecting again"})
     print (f"starting game from session {session.get('session_id')}")
     async with httpx.AsyncClient(timeout=None) as client:
         response = await client.post(f"http://{os.getenv('GAME_SERVER_IP')}:{os.getenv('GAME_SERVER_PORT_NUMBER')}/api/start-game", 
                                      json={'room': session['room'], "session_id": session.get('session_id')})
         resp = JSONResponse(content=response.json())
-        if session.get('new_session'):
-            resp.set_cookie(key="session_id", value=session.get('session_id'), samesite="None", secure=True)
         return resp
         
 
@@ -80,8 +77,7 @@ async def choose_room(room: Room, session: Dict = Depends(get_session)):
         else:
             session['room'] = rooms_dict[room.room]['room']
             resp = JSONResponse(content={"status": "success", "message": f"Room chosen: {room.room}"})
-        if session.get('new_session'):
-            resp.set_cookie(key="session_id", value=session.get('session_id'), samesite="None", secure=True)
+        resp.set_cookie(key="session_id", value=session.get('session_id'), samesite="lax", secure=True)
         return resp
     except KeyError:
         return JSONResponse(content={"status": "error", "message": "Room not found"}, status_code=404)

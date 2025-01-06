@@ -16,9 +16,14 @@ export default function useGame() {
   };
 
   const sendCommand = async (command) => {
+    if (!isGameStarted){
+        setOutput(prevOutput => prevOutput + "\n Please wait, game is still starting.");
+        return;
+    }
+     
      if (isProcessing) {
         // If already processing, do not start another command
-        setOutput(prevOutput => prevOutput + "\n\n Please wait, command is being processed.");
+        setOutput(prevOutput => prevOutput + "\n\n Please wait, the AI is thinking!");
         return;
     }
     
@@ -53,7 +58,16 @@ const startGame = async () => {
       setOutput(prevOutput => prevOutput + "\nPlease choose a room before starting the game.");
     return;
   }
-  setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt takes a while for the AI to respond, a new sound will always ring when it's done. \n \n");
+  
+  if (isProcessing) {
+        // If already processing, do not start another game
+        setOutput(prevOutput => prevOutput + "\n\n Please wait, the AI is thinking!");
+        return;
+    }
+    
+  setIsProcessing(true);
+  
+  setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt takes a while for the AI to respond, a sound will ring again when it's done. \n \n");
   
   try {
     const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
@@ -64,15 +78,20 @@ const startGame = async () => {
     if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
     const data = await response.json();
     
-    // Clear the output before adding the new game message
-    setOutput('New game started. Welcome back!\n');
+    
+    if (data.status == 'success'){
+        setOutput('New game started. Welcome back!\n'); // Clear the output as a new game starts
+        setIsGameStarted(true);
+    }
     setOutput(prevOutput => prevOutput + "\n" + data.message);
     notifyReply();
-    setIsGameStarted(true);
   } catch (error) {
     setOutput(prevOutput => prevOutput + "\nFailed to start new game: " + error.message);
     setError(error.message);
     console.error(error);
+  }
+  finally {
+    setIsProcessing(false);
   }
 };
 
