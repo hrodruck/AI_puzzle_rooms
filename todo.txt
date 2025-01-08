@@ -1,4 +1,2 @@
-Set up a different endpoint for development, without affecting the main link
-If you win the game and start it again, the game gets stuck (you need to refresh the page)
-Add "about" tab
 Add "game master" tab
+improve custom rooms experience if there's any interest

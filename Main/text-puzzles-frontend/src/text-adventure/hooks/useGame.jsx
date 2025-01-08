@@ -77,6 +77,7 @@ const startGame = async () => {
     }
     
   setIsProcessing(true);
+  setIsGameStarted(false);
   
   setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt can take minutes for the AI to respond, a sound will ring when it's done. \n");
   
