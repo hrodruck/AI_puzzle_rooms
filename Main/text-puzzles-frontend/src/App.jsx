@@ -5,6 +5,7 @@ import GlobalStyle from './GlobalStyle';
 import { Container, InnerContainer } from './GlobalStyle';
 import TextAdventure from './text-adventure/components/TextAdventure';
 import RoomSelection from './text-adventure/components/RoomSelection';
+import About from './text-adventure/components/About';
 import { GameProvider } from './text-adventure/context/GameContext';
 import { Nav, TabList, TabItem, TabLink, TabBar} from './App.styles';
 
@@ -21,7 +22,11 @@ function App() {
                 <Nav>
                 <TabList>
                   <TabItem>
-                    <TabLink to="/" className={({ isActive }) => isActive ? "active" : ""}>Room Selection</TabLink>
+                    <TabLink to="/" className={({ isActive }) => isActive ? "active" : ""}>About</TabLink>
+                    <TabBar />
+                  </TabItem>
+                  <TabItem>
+                    <TabLink to="/room-selection" className={({ isActive }) => isActive ? "active" : ""}>Room Selection</TabLink>
                     <TabBar />
                   </TabItem>
                   <TabItem>
@@ -33,7 +38,8 @@ function App() {
             
                 <InnerContainer>
                     <Routes>
-                      <Route path="/" element={<RoomSelection />} />
+                      <Route path="/" element={<About />} />
+                      <Route path="/room-selection" element={<RoomSelection />} />
                       <Route path="/game" element={<TextAdventure />} />
                     </Routes>
                 </InnerContainer>
