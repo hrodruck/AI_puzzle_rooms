@@ -16,7 +16,19 @@ class Game():
         self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
         self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
         self.game_ended = False
+        self.game_progress_queue = ''
+        self.progress_lock = asyncio.Lock()
         print ("Engine is running. Use set_scene and start_game!")
+
+    async def get_progress_queue(self):
+        while not self.game_ended:
+            async with self.progress_lock:
+                if len(self.game_progress_queue)>0:
+                    content = self.game_progress_queue
+                    self.game_progress_queue = ''
+                    yield content
+                await asyncio.sleep(0.1)
+        raise StopAsyncIteration
 
     def extract_json_between_markers(self, text):
         match = None
@@ -65,7 +77,7 @@ class Game():
         content = chat_completion.choices[0].message.content
         print(content)
         print('.')
-        return content
+        return content #this can be changed if necessary to yield chunks of stream, not done currently bc API is fast enough and this change is not priority
 
     async def chat_ollama_backbone(self, history, json=False):
         client = AsyncClient()
@@ -80,14 +92,17 @@ class Game():
                 content = part['message']['content']
                 print(content, end='', flush=True)
                 full_response += content
-        print('.')  # Add a newline after the response
-        return full_response
+        print('.')  # Add a separator after the response
+        return full_response #this can be changed if necessary to yield chunks of stream, not done currently to align with openai backbone
     
     async def chat_inner(self, history, json=False):
         if self.openai_backbone:
-            return await self.chat_openai_backbone(history, json)
+            response = await self.chat_openai_backbone(history, json)
         else:
-            return await self.chat_ollama_backbone(history, json)
+            response = await self.chat_ollama_backbone(history, json)
+        async with self.progress_lock:
+            self.game_progress_queue += f"\n{response}"
+        return response
 
     async def chat_outer(self, user_message, user_history=[], json=False, keep_history=True):
         #repeat system prompt
@@ -153,7 +168,10 @@ class Game():
             
     async def process_input(self, p_in):
         
+        self.game_progress_queue += "\n\n## received player input##\n"
+        
         if self.game_ended:
+            self.game_progress_queue += "The game has ended!"
             return "The game has ended!"
         
         frozen_game_engine_history = copy.deepcopy(self.game_engine_history)
@@ -161,8 +179,11 @@ class Game():
         
         game_object_names = list(self.game_object_histories.keys())
         
+        self.game_progress_queue += "##Checking for bluffs...##\n"
+        
         bluff = await self.sanity_bluff_check(p_in, game_object_names)
         if not bluff:
+            self.game_progress_queue += "##Checking for player success...##\n"
             success = await self.ingame_success_check(p_in, game_object_names)
             if success:
                 json_example ='{'
@@ -174,15 +195,20 @@ class Game():
                     Remember to include all game objects in your json response. These are the game objects:{str(game_object_names)}\
                     In your json, Use only one string per game object. Do not nest properties. Include all game objects, except win and lose conditions.\
                     Example of json format: {json_example}"
+                self.game_progress_queue += "##Giving orders to game objects after player success...##\n"
                 json_orders = await self.chat_outer(order_prompt, self.game_engine_history, json=True)
                 dict_orders = self.load_json_from_llm(json_orders)
                 await self.send_broadcast(dict_orders)
             else:
                 failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {p_in}. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
+                self.game_progress_queue += "##Reflecting on player failure...##\n"
                 await self.chat_outer(failure_prompt, self.game_engine_history)
         else:
+            self.game_progress_queue += "##Reflecting on player bluff...##\n"
             failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {p_in}. The game has determined that the player was somehow bluffing or attempting an impossible feat. Pay special attention to mentions to objects that don't exist."
             await self.chat_outer(failure_prompt, self.game_engine_history)
+        
+        self.game_progress_queue += "##Summarizing player action to all game objects...##\n"
         broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Make sure to include whether they were bluffing."
         broadcast_message = await self.chat_outer(broadcast_prompt, self.game_engine_history, keep_history=False)
         broadcast_message += "\n Do not reply to this message. Merely use it for future responses"
@@ -200,8 +226,10 @@ class Game():
             This is the message that was sent to all game objects to tell them of the player's actions: {broadcast_message}\
             Relay the state of affairs as a result of the player's actions to the player. Include interesting details about the game state, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why.\
             Do not reveal secret or confidential game information, such as a hidden object."
+        self.game_progress_queue += "##Generating player response...##\n"
         response_to_player = await self.chat_outer(response_prompt, self.game_engine_history, keep_history=False)
         
+        self.game_progress_queue += "##Checking if the game has ended...##\n"
         ending_message = await self.check_ending()
         if len(ending_message)>0:
             response_to_player = ending_message
@@ -211,6 +239,7 @@ class Game():
                 This is ground truth data about the game.\
                 What the player saw:\n{response_to_player}\n\
                 Game object states:{game_string}\n\n"
+            self.game_progress_queue += "##Updating game history...##\n"
             await self.chat_outer(update_game_history_prompt, self.game_engine_history)
         return response_to_player
 
@@ -301,6 +330,7 @@ class Game():
         ending_dict = self.load_json_from_llm(ending_response)
         if ending_dict['won']:
             print (self.winning_message)
+            self.game_progress_queue += self.winning_message
             self.game_ended=True
             self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
             return '\n' + self.winning_message
@@ -311,6 +341,7 @@ class Game():
             ending_dict = self.load_json_from_llm(ending_response)
             if ending_dict['lost']:
                 print(self.losing_message)
+                self.game_progress_queue += self.losing_message
                 self.game_ended = True
                 self.game_engine_history = copy.deepcopy(frozen_game_engine_history)
                 return '\n' + self.losing_message
