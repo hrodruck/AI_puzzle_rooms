@@ -46,6 +46,13 @@ async def get_session(request: Request) -> Dict:
     print (f'Main server: {session_id=}')
     return sessions[session_id]
 
+@app.get("/api/game-progress")
+async def game_progress(session: Dict = Depends(get_session)):
+    async with httpx.AsyncClient() as client:
+        response = await client.post(f"http://{os.getenv('GAME_SERVER_IP')}:{os.getenv('GAME_SERVER_PORT_NUMBER')}/api/game-progress", 
+                                     json={"session_id": session.get('session_id')})
+        return JSONResponse(content=response.json())
+
 @app.post("/api/game")
 async def game_endpoint(command: Command, session: Dict = Depends(get_session)):
     if session['room'] is None:
