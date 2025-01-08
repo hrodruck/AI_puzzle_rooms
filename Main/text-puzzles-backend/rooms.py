@@ -50,7 +50,7 @@ rooms_dict['experimental_room_3'] = {
           "Inventory": "The player set of possessions. It is initially empty",
           "kitchen utensils": "The normal utensils you'd expect from a kitchen: metal and wooden spoons, pans, a sink, dishcloth, etc... Basically anything you'd find in a normal kitchen, even if not in the explicit description",
           "Electrical outlet": "There is an electrical outlet in this room.",
-          "Magic": "An abstract object representing the magical powers of the player. The player is a capable mage, let their creativity shine! The player cannot perform advanced magic like summoning a dragon or talking to the gods."
+          "Magic": "An abstract object representing the magical powers of the player. The player is a capable mage, let their creativity shine! The player cannot perform advanced magic like summoning a dragon or talking to the gods.",
           "room_itself": "A modern-day kitchen with normal kitchen utensils and a broken stove. It is impossible to leave the kitchen; the challenge must be completed within it.",
         },
         "winning_message": "Congratulations! You've met the condition!",
