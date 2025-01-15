@@ -9,7 +9,7 @@ const About = () => {
 This project's code can be found at [GitHub](https://github.com/hrodruck/AI_puzzle_rooms)
 
 The idea of the game is that one may choose a room and try to escape from it using free-form, creative text inputs. You can attempt a backflip, summoning a dragon, or even tricking the AI engine under the hood, though success is not guaranteed!
-You can even interact with the puzzles in a clever way, you may find alternate solutions if you're creative enough.
+You can even interact with the puzzles in a clever way, you may find alternate solutions if you're creative enough. Start by [choosing a room](/room-selection).
 
 The system takes long processing inputs; if you want to see what's under the hood, consider taking a peak at the [GameMaster mode](/gamemaster) (it will show the inner logic after you start a game).
 My contacts: [LinkedIn](https://www.linkedin.com/in/rodrigo-mello-32571a291/) and [X](https://x.com/Professor_Ho_Oh)

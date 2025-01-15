@@ -33,19 +33,13 @@
             }
             catch(error){
                 console.error('Error getting game progress', error);
-            }    
+            }
+            if (isProcessing) {
+            intervalRef.current = setTimeout(pollGameProgress, 1000);
+        }
         };
         if (isProcessing){
-            intervalRef.current = setInterval(pollGameProgress, 1000);
-        }
-        else{
-            if (intervalRef.current) {
-                clearInterval(intervalRef.current);
-            }            
-            setTimeout(() => {
-                pollGameProgress();
-                intervalRef.current = setTimeout(() => pollGameProgress(), 4000);
-            }, 4000);
+            pollGameProgress();
         }
         return () => {
             if (intervalRef.current) {
