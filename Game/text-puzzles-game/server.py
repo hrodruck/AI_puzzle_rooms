@@ -1,4 +1,4 @@
-from engine import Game
+from game import Game
 from fastapi import FastAPI, Depends
 from fastapi.responses import JSONResponse
 from fastapi.middleware.cors import CORSMiddleware
@@ -33,25 +33,34 @@ class SessionData(BaseModel):
     session_id:str
 
 # This session management is simplified since it's only for Game processing
-sessions = {}
+games = {}
 game_progress = {}
+locks = {}
 
 async def get_game_from_session(session_id: str):
-    return sessions[session_id]
+    return games[session_id]
     
 async def new_session(session_id: str, game: Any):
-    sessions[session_id] = game #this is stored indefinetely in memory for now
+    games[session_id] = game #this is stored indefinetely in memory for now
     game_progress[session_id]=''
-    async for progress in game.get_progress_queue(): #the game instance clears the queue on its own
-        if len(progress)>0:
-            game_progress[session_id] += progress
-        await asyncio.sleep(0.1)
+    locks[session_id] = asyncio.Lock()
+    asyncio.create_task(poll_game_progress(session_id))
 
-async def get_game_progress(session_id:str):
-    if session_id in sessions.keys():
-        progress = game_progress[session_id]
-        game_progress[session_id]='' #TODO there might be race conditions with setting game progress elsewhere
-        return progress
+async def poll_game_progress(session_id:str):
+    while True: #TODO check if this loop ends when game ends
+        async with locks[session_id]:
+            updates = []
+            async for item in games[session_id].get_progress_queue():
+                updates.append(item)
+            game_progress[session_id] += (''.join(updates))
+        await asyncio.sleep(0.02)
+
+async def get_game_progress(session_id:str): # this function helps return game progress from this server to the response
+    if session_id in locks.keys():
+        async with locks[session_id]:
+            progress = game_progress[session_id]
+            game_progress[session_id]=''
+            return progress
     else:
         return ''
     
@@ -75,7 +84,7 @@ async def start_game(data: RoomData):
     try:
         session_id = data.session_id
         game = Game() #start a new instance anyways, since the player could be restarting their game
-        asyncio.create_task(new_session(session_id, game))
+        await new_session(session_id, game)
         room = data.room
         room_description = room['description']
         room_description.pop('customObjects', None) #weirdness from the frontend regarding custom rooms
