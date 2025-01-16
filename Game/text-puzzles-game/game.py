@@ -43,7 +43,8 @@ class Game():
         self.winning_message = winning_message
         self.losing_message = losing_message
 
-    async def initialize_game_objects(self):        
+    async def initialize_game_objects(self):    
+        await self.add_to_progress_queue('<display_to_player> Filling room with objects...\n</display_to_player>')        
         designer_assistant_prompt = 'You are an assistant game designer. Please keep your answers brief whenever possible.'
         designer_user_prompt = "I am designing a text adventure in which the goal is to escape a room. I will provide brief descriptions of each object in the room and your task is to fill those descriptions such that they are usable in game format. When prompted, answer only the latest description"
         designer_assistant = GameObject()
@@ -81,7 +82,6 @@ class Game():
         return game_state
             
     async def initialize_engine_simulator(self):
-        await self.add_to_progress_queue('<display_to_player> Filling room with objects...\n</display_to_player>')
         game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be very brief unless talking directly to the player. I am the game designer.'
         game_state = await self.get_game_state()
         game_string = str(game_state)
