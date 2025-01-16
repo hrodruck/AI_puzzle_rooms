@@ -24,13 +24,13 @@ class Game():
                         self.game_progress_queue += item #do not directly yield the item because there may be more data from add_to_progress_queue
                         yield self.game_progress_queue
                         self.game_progress_queue = ''
-                        await asyncio.sleep(0.2)
+                        await asyncio.sleep(0.02)
                 for k, v in self.game_objects.items():
                     async for item in self.game_objects[k].get_progress_queue():
                         self.game_progress_queue += item
                         yield self.game_progress_queue
                         self.game_progress_queue = ''
-                        await asyncio.sleep(0.2)
+                        await asyncio.sleep(0.02)
         else:
             raise StopAsyncIteration
         
@@ -81,6 +81,7 @@ class Game():
         return game_state
             
     async def initialize_engine_simulator(self):
+        await self.add_to_progress_queue('<display_to_player> Filling room with objects...\n</display_to_player>')
         game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be very brief unless talking directly to the player. I am the game designer.'
         game_state = await self.get_game_state()
         game_string = str(game_state)
