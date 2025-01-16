@@ -30,6 +30,14 @@
                 const data = await response.json();
                 const newGameProgress = data.response;
                 setGameProgress(prevGameProgress  => prevGameProgress + newGameProgress);
+                let displayToPlayerBegin = newGameProgress.indexOf('<display_to_player>');
+                if (displayToPlayerBegin != -1){
+                    let displayToPlayerEnd = newGameProgress.indexOf('</display_to_player>');
+                    displayToPlayerBegin += '<display_to_player>'.length;
+                    const displayToPlayerString = newGameProgress.slice(displayToPlayerBegin,displayToPlayerEnd);
+                    console.log(displayToPlayerString)
+                    setOutput(prevOutput => prevOutput + displayToPlayerString)
+                }
             }
             catch(error){
                 console.error('Error getting game progress', error);
@@ -63,7 +71,7 @@
         
         setIsProcessing(true);
         
-        setOutput(prevOutput => prevOutput + "\n\n Command sent! Command was \n" + command + "\nIt takes a while for the AI to respond, a sound will ring when it's done. \n \n ");
+        setOutput(prevOutput => prevOutput + "\n\n Command sent! Command was \n" + command + "\nIt takes a while for the game to respond, a sound will ring when it's done. \n \n ");
         try {
           const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/game`, {
             method: 'POST',
@@ -106,7 +114,7 @@
       setIsProcessing(true);
       setIsGameStarted(false);
       
-      setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt can take minutes for the AI to respond, a sound will ring when it's done. \n");
+      setOutput(prevOutput => prevOutput + "\nStarting the game! \nIt can take a long time for the game to finish processing, a sound will ring when it's done. \n");
       
       try {
         const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/new-game`, {
@@ -122,7 +130,7 @@
         setIsProcessing(false);
         if (data.status == 'success'){
             setOutput(data.message); // Clear the output as a new game starts
-            setOutput(prevOutput => prevOutput + '\n Generating room description... (a sound will ring when it\'s done)\n'); 
+            setOutput(prevOutput => prevOutput + '(a sound will always ring when a command is completed)\n'); 
             setIsGameStarted(true);
         }
       } catch (error) {

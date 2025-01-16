@@ -151,21 +151,23 @@ const RoomSelection = () => {
 
   return (
     <RoomSelectionContainer>
-      <h2>Select or Create Room</h2>
+      <h2>Select a Room</h2>
       <RoomSelect value={selectedRoom} onChange={(e) => handleRoomSelect(e.target.value)}>
         <option value="">Choose a room</option>
         <option value="room_1">Room One</option>
         <option value="room_2">Room Two</option>
         <option value="experimental_room_3">Experimental Room (3)</option>
       </RoomSelect>
-
-      <h3>Or Create Your Custom Room:</h3> <ImportButton 
+      <details>
+        <summary><h3>Or Create Your Custom Room:</h3></summary>
+        
+        <ImportButton 
         type="button" 
         onClick={loadExampleRoom}
-      >
-      Load Example Custom Room
-      </ImportButton>
-      <form onSubmit={handleCustomRoomSubmit}>
+        >
+        Load Example Custom Room
+        </ImportButton>
+        <form onSubmit={handleCustomRoomSubmit}>
         <FormGroup>
           <Label htmlFor="room_itself">Room Description:</Label>
           <CustomTextArea id="room_itself" name="room_itself" value={formData.room_itself} onChange={handleChange} />
@@ -224,7 +226,7 @@ const RoomSelection = () => {
         >
           Import Custom Room from JSON
         </ImportButton>
-        
+
         <div style={{ marginTop: '20px' }}>
         <ButtonContainer>
           <SubmitButton 
@@ -234,8 +236,9 @@ const RoomSelection = () => {
           </SubmitButton>
         </ButtonContainer>
         </div>
-        
-      </form>
+
+        </form>
+      </details>
     </RoomSelectionContainer>
   );
 };

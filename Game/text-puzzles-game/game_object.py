@@ -15,7 +15,7 @@ class GameObject():
                 self.progress_queue += item #do not directly yield the item because there may be more data from add_to_progress_queue
                 yield self.progress_queue
                 self.progress_queue = ''
-        await asyncio.sleep(0.1)
+        await asyncio.sleep(0.02)
         
         
     async def _chat_with_backbone(self, user_message, user_history=[], json=False, keep_history=True):

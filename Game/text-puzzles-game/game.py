@@ -24,13 +24,13 @@ class Game():
                         self.game_progress_queue += item #do not directly yield the item because there may be more data from add_to_progress_queue
                         yield self.game_progress_queue
                         self.game_progress_queue = ''
-                        await asyncio.sleep(0.2)
+                        await asyncio.sleep(0.02)
                 for k, v in self.game_objects.items():
                     async for item in self.game_objects[k].get_progress_queue():
                         self.game_progress_queue += item
                         yield self.game_progress_queue
                         self.game_progress_queue = ''
-                        await asyncio.sleep(0.2)
+                        await asyncio.sleep(0.02)
         else:
             raise StopAsyncIteration
         
@@ -43,7 +43,8 @@ class Game():
         self.winning_message = winning_message
         self.losing_message = losing_message
 
-    async def initialize_game_objects(self):        
+    async def initialize_game_objects(self):    
+        await self.add_to_progress_queue('<display_to_player> Filling room with objects...\n</display_to_player>')        
         designer_assistant_prompt = 'You are an assistant game designer. Please keep your answers brief whenever possible.'
         designer_user_prompt = "I am designing a text adventure in which the goal is to escape a room. I will provide brief descriptions of each object in the room and your task is to fill those descriptions such that they are usable in game format. When prompted, answer only the latest description"
         designer_assistant = GameObject()

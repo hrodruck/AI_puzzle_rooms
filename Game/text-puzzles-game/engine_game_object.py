@@ -31,7 +31,7 @@ class EngineGameObject(GameObject):
         self.game_string = str(await self.send_same_broadcast(game_state_broadcast_prompt, keep_history=True))
     
     async def process_player_input(self, player_input):
-        await self.add_to_progress_queue("\n\n## received player input##\n")
+        await self.add_to_progress_queue("\n\n<display_to_player>Received player input!\n</display_to_player>")
         
         if self.game_ended:
             await self.add_to_progress_queue("The game has ended!")
@@ -56,16 +56,16 @@ class EngineGameObject(GameObject):
                 Remember to include all game objects in your json response. These are the game objects:{str(game_object_names)}\
                 In your json, Use only one string per game object. Do not nest properties. Include all game objects, except win and lose conditions.\
                 Example of json format: {json_example}"
-            await self.add_to_progress_queue("##Giving orders to game objects after player success...##\n")
+            await self.add_to_progress_queue("<display_to_player>##Giving orders to game objects after player success...##\n</display_to_player>")
             json_orders = await self._chat_with_backbone(order_prompt, self._my_history, json=True)
             dict_orders = self.comms_backbone.load_json_from_llm(json_orders)
             await self.send_broadcast(dict_orders)
         else:
             failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {player_input}. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
-            await self.add_to_progress_queue("##Reflecting on player failure...##\n")
+            await self.add_to_progress_queue("<display_to_player>##Reflecting on player failure...##\n</display_to_player>")
             await self._chat_with_backbone(failure_prompt, self._my_history)
             
-        await self.add_to_progress_queue("##Summarizing player action to all game objects...##\n")
+        await self.add_to_progress_queue("<display_to_player>##Summarizing player action to all game objects...##\n</display_to_player>")
         broadcast_prompt = f"Relay the state of affairs as a result of the player's actions as a single message to all game objects. Make sure to include whether they were bluffing. Return a single text message summarizing what happened, not json."
         broadcast_message = await self._chat_with_backbone(broadcast_prompt, self._my_history)
         broadcast_message += '\n "Do not reply to this message. Merely use it for future responses"'
@@ -77,17 +77,18 @@ class EngineGameObject(GameObject):
             This is the message that was sent to all game objects to tell them of the player's actions: {broadcast_message}\
             Relay the state of affairs as a result of the player's actions to the player. Include interesting details about the game state, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why.\
             Do not reveal secret or confidential game information, such as a hidden object."
-        await self.add_to_progress_queue("##Generating player response...##\n")
+        await self.add_to_progress_queue("<display_to_player>##Generating response to the player...##\n</display_to_player>")
         response_to_player = await self._chat_with_backbone(response_prompt, self._my_history, keep_history=True)
+        response_to_player = '\n\n' + response_to_player
         
-        await self.add_to_progress_queue("##Checking if the game has ended...##\n")
+        await self.add_to_progress_queue("<display_to_player>##Checking if the game has ended...##\n\n</display_to_player>")
         ending_message, has_ended = await self.check_ending()
         if has_ended:
             response_to_player += ending_message
         return response_to_player, has_ended
 
     async def sanity_bluff_check(self, player_input, game_object_names, game_state):
-        await self.add_to_progress_queue("##Checking for bluffs...##\n")
+        await self.add_to_progress_queue("<display_to_player>##Checking for bluffs...##\n</display_to_player>")
         
         bluff_prompt = f"This is the input from the player: {player_input}\
             Please briefly answer each of the following questions:\
@@ -110,7 +111,7 @@ class EngineGameObject(GameObject):
         return await self.get_binary_answer(binary_bluff_prompt, self.aux_bluff_history, 'bluff')
         
     async def ingame_success_check(self, player_input, game_object_names, game_state):
-        await self.add_to_progress_queue("##Checking for player success...##\n")
+        await self.add_to_progress_queue("<display_to_player>##Checking for player success...##\n</display_to_player>")
         success_questions_prompt = f"What objects, if any, would be affected by the player's actions?\
             What questions, if any, would need to be asked of those game objects to determine if the player is able to perform their command?\
             The aim is to determine whether the player can do what he wants to do.\
@@ -185,7 +186,7 @@ class EngineGameObject(GameObject):
         
     async def send_broadcast(self, dict_messages, keep_history=True):
         #keys of dict_messages should be the same as keys in self.active_game_objects
-        
+        await self.add_to_progress_queue("<display_to_player>##Querying gameobjects...##\n</display_to_player>")
         tasks = []
         for k, v in dict_messages.items():
             if "N/A" in v:
