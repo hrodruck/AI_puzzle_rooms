@@ -35,7 +35,6 @@
                     let displayToPlayerEnd = newGameProgress.indexOf('</display_to_player>');
                     displayToPlayerBegin += '<display_to_player>'.length;
                     const displayToPlayerString = newGameProgress.slice(displayToPlayerBegin,displayToPlayerEnd);
-                    console.log(displayToPlayerString)
                     setOutput(prevOutput => prevOutput + displayToPlayerString)
                 }
             }
