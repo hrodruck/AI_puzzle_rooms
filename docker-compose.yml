@@ -1,0 +1,38 @@
+services:
+  main-server:
+    build:
+      context: .
+      dockerfile: Dockerfile_main
+    ports:
+      - "443:443"
+    environment:
+      - FRONTEND_CORS_IP=${SERVER_IP}
+      - VITE_REACT_APP_BACKEND_URL=${SERVER_IP}
+      - VITE_REACT_APP_BACKEND_PORT=443
+      - MAIN_SERVER_PORT_NUMBER=443
+      - SSL_KEYFILE_PATH=/app/ssl/privkey.pem
+      - SSL_CERTFILE_PATH=/app/ssl/fullchain.pem
+      - VITE_APP_TITLE="AI-rooms"
+      - GAME_SERVER_IP=${SERVER_IP}
+      - GAME_SERVER_PORT_NUMBER=41801
+    volumes:
+      - ./ssl:/app/ssl
+    depends_on:
+      - game-server
+
+  game-server:
+    build:
+      context: .
+      dockerfile: Dockerfile_game
+    ports:
+      - "41801:41801"
+    environment:
+      - MAIN_SERVER_IP=${SERVER_IP}
+      - GAME_SERVER_PORT_NUMBER=41801
+      - OPEN_API_KEY=${OPEN_API_KEY}
+      - OPEN_API_URL=${OPEN_API_URL}
+      - USE_EXTERNAL_BACKBONE=True
+
+volumes:
+  ssl:
+    driver: local
