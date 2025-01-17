@@ -1,0 +1,23 @@
+Making it so you can play in the phone while doing something else and the AI reads the game's response to you out loud so you just need to stop and type commands
+
+Switch "it can take a long time" to "it can take up to 1-2 minutes"
+
+Remove the experimental label from room 3
+
+Estimating the average time for an answer and show a progress bar to the player while the AI is thinking. Even if it's not exact, seeing a bar moving would give hope to the player that the AI is making progress.
+
+"Start or Restart Game" button is very much in the center despite it being the button most rarely used. Consider for example the following order: Main game text view, Command input field, "Submit Command" button (on the left) and "Start or Restart Game" button (on the right end of the same row). In the best case, pressing Enter can be used to finish typing the command and send it (without needing to hit the button)
+
+Remove "##Querying gameobjects...##" and switch to a progress bar
+
+Maybe formatting game output like this:
+- Title of the room you are in
+- This is the description of the room under its title. It mostly stays the same so player doesn't really need to read again most of the time. Although sometimes, if items are picked up for example, if might change.
+- (empty line to separate the sections)
+- You perform the action you chose and it changes the world as described here. This part really highlights the effect of your action and because it's always different, the player should focus reading this
+
+Overall, an ending that looks more clearly like an ending would be a benefit.
+
+Adding which game object said what to gamemaster mode. Maybe color-code "core loop", "game engine" and "other object"
+
+Change frontend check to a "while" when searching for <display_to_player>" messages so all of them are shown

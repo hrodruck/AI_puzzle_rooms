@@ -47,19 +47,19 @@ async def new_session(session_id: str, game: Any):
     asyncio.create_task(poll_game_progress(session_id))
 
 async def poll_game_progress(session_id:str):
-    while True: #TODO check if this loop ends when game ends
+    while True: #TODO careful with eternal loops
         async with locks[session_id]:
             updates = []
             async for item in games[session_id].get_progress_queue():
                 updates.append(item)
             game_progress[session_id] += (''.join(updates))
-        await asyncio.sleep(0.02)
+        await asyncio.sleep(0.2)
 
 async def get_game_progress(session_id:str): # this function helps return game progress from this server to the response
     if session_id in locks.keys():
         async with locks[session_id]:
             progress = game_progress[session_id]
-            game_progress[session_id]=''
+            game_progress[session_id]='' #TODO there might be race conditions with setting game progress elsewhere
             return progress
     else:
         return ''
