@@ -8,6 +8,7 @@
       const [isGameStarted, setIsGameStarted] = useState(false);
       const [isProcessing, setIsProcessing] = useState(false);
       const [gameProgress, setGameProgress] = useState('');
+      const [currentRoomDescription, setRoomDescription] = useState('');
       const intervalRef = useRef(null);
 
       const notifyReply = () => {
@@ -30,13 +31,20 @@
                 const data = await response.json();
                 const newGameProgress = data.response;
                 setGameProgress(prevGameProgress  => prevGameProgress + newGameProgress);
-                let displayToPlayerBegin = newGameProgress.indexOf('<display_to_player>');
-                if (displayToPlayerBegin != -1){
-                    let displayToPlayerEnd = newGameProgress.indexOf('</display_to_player>');
+                let displayToPlayerBegin = 0;
+                let displayToPlayerEnd = 0
+                let totalDisplayToPlayerString = ''
+                while (true){
+                    displayToPlayerBegin = newGameProgress.indexOf('<display_to_player>', displayToPlayerBegin);
+                    if (displayToPlayerBegin == -1){
+                        break;
+                    }
+                    displayToPlayerEnd = newGameProgress.indexOf('</display_to_player>', displayToPlayerEnd);
                     displayToPlayerBegin += '<display_to_player>'.length;
-                    const displayToPlayerString = newGameProgress.slice(displayToPlayerBegin,displayToPlayerEnd);
-                    setOutput(prevOutput => prevOutput + displayToPlayerString)
+                    totalDisplayToPlayerString += newGameProgress.slice(displayToPlayerBegin,displayToPlayerEnd);
+                    displayToPlayerEnd += '</display_to_player>'.length;
                 }
+                setOutput(prevOutput => prevOutput + totalDisplayToPlayerString)
             }
             catch(error){
                 console.error('Error getting game progress', error);
@@ -70,7 +78,7 @@
         
         setIsProcessing(true);
         
-        setOutput(prevOutput => prevOutput + "\n\n Command sent! Command was \n" + command + "\nIt takes a while for the game to respond, a sound will ring when it's done. \n \n ");
+        setOutput(prevOutput => prevOutput + "\n\n Command sent! Command was \n" + command + "\nIt takes up to one minute for the game to respond, a sound will ring when it's done. \n \n ");
         try {
           const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/game`, {
             method: 'POST',
@@ -130,6 +138,7 @@
         if (data.status == 'success'){
             setOutput(data.message); // Clear the output as a new game starts
             setOutput(prevOutput => prevOutput + '(a sound will always ring when a command is completed)\n'); 
+            setOutput(prevOutput => prevOutput + '\n' + currentRoomDescription + '\n'); 
             setIsGameStarted(true);
         }
       } catch (error) {
@@ -142,16 +151,18 @@
       }
     };
 
+    
       useEffect(() => {
-        if (isGameStarted){
-            
-            sendCommand('Describe the room');
+        if (isRoomChosen){
+            startGame();
         }
           
-      }, [isGameStarted]);
+      }, [isRoomChosen]);
+    
 
     const chooseRoom = async (room) => {
       try {
+        setIsRoomChosen(false);
         const roomData = typeof room === 'string' ? { room } : room; // If it's a string, wrap it in an object, otherwise use the object directly
         const response = await fetch(`${import.meta.env.VITE_REACT_APP_BACKEND_URL}:${import.meta.env.VITE_REACT_APP_BACKEND_PORT}/api/choose-room`, {
           method: 'POST',
@@ -165,6 +176,8 @@
         if (!response.ok) throw new Error(`HTTP error! status: ${response.status}`);
         const data = await response.json();
         setOutput(prevOutput => prevOutput + "\n" + data.message);
+        setOutput(prevOutput => prevOutput + "\n\n" + data.room_description);
+        setRoomDescription(data.room_description);
         setIsRoomChosen(true);
       } catch (error) {
         setOutput(prevOutput => prevOutput + "\nFailed to choose room: " + error.message);

@@ -19,7 +19,7 @@ const TextAdventure = () => {
         <GameOutput output={output} error={error} />
         </OutputBox>
         
-        <Button onClick={startGame}>Start or Restart Game</Button>
+        <Button onClick={startGame}>Restart Game</Button>
         <CustomInput 
         value={command} 
         onChange={(e) => setCommand(e.target.value)} 
