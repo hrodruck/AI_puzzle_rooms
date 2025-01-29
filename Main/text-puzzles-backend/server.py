@@ -80,10 +80,10 @@ async def choose_room(room: Room, session: Dict = Depends(get_session)):
     try:
         if isinstance(room.room, dict):
             session['room'] = room.room
-            resp = JSONResponse(content={"status": "success", "message": "Chose custom room"})
+            resp = JSONResponse(content={"status": "success", "message": "Chose custom room", "room_description":session['room']['room_description']})
         else:
             session['room'] = rooms_dict[room.room]['room']
-            resp = JSONResponse(content={"status": "success", "message": f"Room chosen: {room.room}"})
+            resp = JSONResponse(content={"status": "success", "message": f"Room chosen: {room.room}", "room_description":session['room']['room_description']})
         resp.set_cookie(key="session_id", value=session.get('session_id'), samesite="lax", secure=True)
         return resp
     except KeyError:

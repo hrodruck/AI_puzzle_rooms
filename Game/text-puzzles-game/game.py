@@ -69,7 +69,7 @@ class Game():
             
         
     async def get_game_state(self):
-        await self.add_to_progress_queue('computing game state...\n')
+        await self.add_to_progress_queue('<display_to_player>computing game state...\n</display_to_player>')
         tasks = []
         summarization_prompt = 'What is your current state? Answer in first person: I...'
         

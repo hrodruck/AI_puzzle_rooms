@@ -24,6 +24,7 @@ const RoomSelection = () => {
     loss_condition: '',
     winning_message: '',
     losing_message: '',
+    room_description: '',
     customObjects: []
   });
   const [selectedRoom, setSelectedRoom] = useState('');
@@ -40,6 +41,7 @@ const RoomSelection = () => {
       loss_condition: '',
       winning_message: '',
       losing_message: '',
+      room_description: '',
       customObjects: []
     });
     setCustomRoomJson('');
@@ -55,7 +57,8 @@ const RoomSelection = () => {
           ...Object.fromEntries(formData.customObjects.map(obj => [obj.key, obj.value]))
         },
         winning_message: formData.winning_message,
-        losing_message: formData.losing_message
+        losing_message: formData.losing_message,
+        room_description: formData.room_description
       }
     };
 
@@ -104,7 +107,8 @@ const RoomSelection = () => {
           ...Object.fromEntries(formData.customObjects.map(obj => [obj.key, obj.value]))
         },
         winning_message: formData.winning_message,
-        losing_message: formData.losing_message
+        losing_message: formData.losing_message,
+        room_description: formData.room_description
       }
     }, null, 2);
     const blob = new Blob([jsonString], { type: "application/json" });
@@ -127,6 +131,7 @@ const RoomSelection = () => {
           loss_condition: roomObject.room.description.loss_condition || '',
           winning_message: roomObject.room.winning_message || '',
           losing_message: roomObject.room.losing_message || '',
+          room_description: roomObject.room.room_description || '',
           customObjects: Object.entries(roomObject.room.description)
             .filter(([key]) => !['room_itself', 'win_condition', 'loss_condition'].includes(key))
             .map(([key, value]) => ({ key, value }))
@@ -154,9 +159,11 @@ const RoomSelection = () => {
       <h2>Select a Room</h2>
       <RoomSelect value={selectedRoom} onChange={(e) => handleRoomSelect(e.target.value)}>
         <option value="">Choose a room</option>
-        <option value="room_1">Room One</option>
-        <option value="room_2">Room Two</option>
-        <option value="experimental_room_3">Experimental Room (3)</option>
+        <option value="room_1">Room One (Easy)</option>
+        <option value="room_2">Room Two (Easy)</option>
+        <option value="room_3">Room Three (Medium)</option>
+        <option value="room_4">Room Four (Hard)</option>
+        <option value="room_5">Room Five (Medium)</option>
       </RoomSelect>
       <details>
         <summary><h3>Or Create Your Custom Room:</h3></summary>
@@ -187,6 +194,10 @@ const RoomSelection = () => {
         <FormGroup>
           <Label htmlFor="losing_message">Losing Message:</Label>
           <CustomInput type="text" id="losing_message" name="losing_message" value={formData.losing_message} onChange={handleChange} />
+        </FormGroup>
+        <FormGroup>
+          <Label htmlFor="room_description">Room Description:</Label>
+          <CustomInput type="text" id="room_description" name="room_description" value={formData.room_description} onChange={handleChange} />
         </FormGroup>
 
         <h4>Custom Objects</h4>

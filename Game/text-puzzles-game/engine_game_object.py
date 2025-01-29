@@ -37,6 +37,10 @@ class EngineGameObject(GameObject):
             await self.add_to_progress_queue("The game has ended!")
             return "The game has ended!", True
         
+        multiple_actions_prompt = f'Is the player trying to perform multiple actions with a single input? Their input was {player_input}. ' +  'Return a json like {multiple:True} or {multiple:False} to indicate whether the player has performed multiple actions.'
+        multiple_actions = await self.get_binary_answer(multiple_actions_prompt, self._my_history, 'multiple')
+        await self.add_to_progress_queue(f'<display_to_player>Did the player perform multiple actions? {multiple_actions}\n</display_to_player>')
+        
         game_object_names = list(self.active_game_objects.keys())
         if self.game_string == '': #not initialized
             await self.update_current_game_state()
@@ -62,6 +66,8 @@ class EngineGameObject(GameObject):
             await self.send_broadcast(dict_orders)
         else:
             failure_prompt = f"It seems the player has failed in their action. The action I'm talking about is {player_input}. Please reflect on why they failed. There may be multiple causes. Pay special attention to mentions to objects that don't exist."
+            self._my_history += self.aux_bluff_history
+            self._my_history += self.aux_success_history
             await self.add_to_progress_queue("<display_to_player>##Reflecting on player failure...##\n</display_to_player>")
             await self._chat_with_backbone(failure_prompt, self._my_history)
             
@@ -75,7 +81,7 @@ class EngineGameObject(GameObject):
         
         response_prompt = f"This is the new state of every object in the game:{self.game_string}\
             This is the message that was sent to all game objects to tell them of the player's actions: {broadcast_message}\
-            Relay the state of affairs as a result of the player's actions to the player. Include interesting details about the game state, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why.\
+            Relay the state of affairs as a result of the player's actions to the player. Include interesting details about the game state, but do not reveal information on the win and/or lose conditions of the game. If the player failed, explain why that failure happened or why it was considered a bluff.\
             Do not reveal secret or confidential game information, such as a hidden object."
         await self.add_to_progress_queue("<display_to_player>##Generating response to the player...##\n</display_to_player>")
         response_to_player = await self._chat_with_backbone(response_prompt, self._my_history, keep_history=True)
@@ -186,7 +192,6 @@ class EngineGameObject(GameObject):
         
     async def send_broadcast(self, dict_messages, keep_history=True):
         #keys of dict_messages should be the same as keys in self.active_game_objects
-        await self.add_to_progress_queue("<display_to_player>##Querying gameobjects...##\n</display_to_player>")
         tasks = []
         for k, v in dict_messages.items():
             if "N/A" in v:
