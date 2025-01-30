@@ -159,11 +159,12 @@ const RoomSelection = () => {
       <h2>Select a Room</h2>
       <RoomSelect value={selectedRoom} onChange={(e) => handleRoomSelect(e.target.value)}>
         <option value="">Choose a room</option>
-        <option value="room_1">Room One (Easy)</option>
-        <option value="room_2">Room Two (Easy)</option>
-        <option value="room_3">Room Three (Medium)</option>
-        <option value="room_4">Room Four (Hard)</option>
-        <option value="room_5">Room Five (Medium)</option>
+        <option value="room_1">Doormat Tutorial</option>
+        <option value="room_2">Two Doors Tutorial</option>
+        <option value="room_3">Kitchen</option>
+        <option value="room_4">Doormat Challenge</option>
+        <option value="room_5">Security Lab</option>
+        <option value="room_6">Submarine</option>
       </RoomSelect>
       <details>
         <summary><h3>Or Create Your Custom Room:</h3></summary>
@@ -176,7 +177,7 @@ const RoomSelection = () => {
         </ImportButton>
         <form onSubmit={handleCustomRoomSubmit}>
         <FormGroup>
-          <Label htmlFor="room_itself">Room Description:</Label>
+          <Label htmlFor="room_itself">Room Itself (from the game's perspective):</Label>
           <CustomTextArea id="room_itself" name="room_itself" value={formData.room_itself} onChange={handleChange} />
         </FormGroup>
         <FormGroup>
@@ -196,7 +197,7 @@ const RoomSelection = () => {
           <CustomInput type="text" id="losing_message" name="losing_message" value={formData.losing_message} onChange={handleChange} />
         </FormGroup>
         <FormGroup>
-          <Label htmlFor="room_description">Room Description:</Label>
+          <Label htmlFor="room_description">Room Description (to be displayed to the player):</Label>
           <CustomInput type="text" id="room_description" name="room_description" value={formData.room_description} onChange={handleChange} />
         </FormGroup>
 

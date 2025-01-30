@@ -90,6 +90,7 @@ async def start_game(data: RoomData):
         room_description.pop('customObjects', None) #weirdness from the frontend regarding custom rooms
         room_description.pop('winning_message', None)
         room_description.pop('losing_message', None)
+        room_description.pop('room_description', None)
         game.set_scene(room_description, room['winning_message'], room['losing_message'])
         print(f"{session_id=}")
         await game.start_game()

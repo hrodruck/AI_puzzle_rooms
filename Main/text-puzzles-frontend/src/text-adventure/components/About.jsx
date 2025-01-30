@@ -12,7 +12,9 @@ The idea of the game is that one may choose a room and try to escape from it usi
 You can even interact with the puzzles in a clever way, you may find alternate solutions if you're creative enough. Start by [choosing a room](/room-selection).
 
 The system takes long processing inputs; if you want to see what's under the hood, consider taking a peak at the [GameMaster mode](/gamemaster) (it will show the inner logic after you start a game).
-My contacts: [LinkedIn](https://www.linkedin.com/in/rodrigo-mello-32571a291/) and [X](https://x.com/Professor_Ho_Oh)
+My contact: [X](https://x.com/Professor_Ho_Oh)
+
+Finally, this is the game's [Discord!](https://discord.gg/uGbfkhXx)
 
 Thanks! See ya!`;
 

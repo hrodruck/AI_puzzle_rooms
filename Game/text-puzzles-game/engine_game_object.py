@@ -12,6 +12,7 @@ class EngineGameObject(GameObject):
         self.winning_message = '' #set externally
         self.losing_message = '' #set externally
         self.game_string = '' #set internally later
+        self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
     
     async def get_binary_answer(self, prompt, history, key):
         # Get a binary (True/False) answer from backbone
@@ -59,6 +60,7 @@ class EngineGameObject(GameObject):
             order_prompt = f"It seems the player succeeded in their action. The action I'm talking about is {player_input}. What orders should be given to each game object?\
                 Remember to include all game objects in your json response. These are the game objects:{str(game_object_names)}\
                 In your json, Use only one string per game object. Do not nest properties. Include all game objects, except win and lose conditions.\
+                Say N/A if the order is not particularly relevant for the given object\
                 Example of json format: {json_example}"
             await self.add_to_progress_queue("<display_to_player>##Giving orders to game objects after player success...##\n</display_to_player>")
             json_orders = await self._chat_with_backbone(order_prompt, self._my_history, json=True)

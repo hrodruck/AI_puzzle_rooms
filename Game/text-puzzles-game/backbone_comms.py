@@ -14,6 +14,7 @@ class BackboneComms():
         self.openai_backbone = bool(os.getenv('USE_EXTERNAL_BACKBONE'))
         self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
         self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
+        self.model_string = "" #needs to be set outside of this class
     
     
     async def read_comms_queue(self):
@@ -49,21 +50,17 @@ class BackboneComms():
             base_url=os.getenv('OPEN_API_URL'),
         )
         
-        #model_str = "meta-llama/Llama-3.3-70B-Instruct-Turbo" #this one works
-        model_str = "Qwen/Qwen2.5-72B-Instruct" #maybe faster for being less verbose
         
         if json:
             chat_completion = await openai.chat.completions.create(
-                model=model_str,
-                max_tokens=16834,
+                model=self.model_string,
                 messages=history,
                 response_format={"type": "json"},
                 presence_penalty=self.presence_penalty_json
             )
         else:
             chat_completion = await openai.chat.completions.create(
-                model=model_str,
-                max_tokens=16834,
+                model=self.model_string,
                 messages=history,
                 presence_penalty=self.presence_penalty
             )
