@@ -51,7 +51,7 @@ class Game():
         designer_assistant.set_system_message(designer_assistant_prompt)
         await designer_assistant.process_game_input(designer_user_prompt)
         
-        game_object_template = 'You simulate an object within a room for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Be brief.'
+        game_object_template = 'You simulate an object within a room for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Remember to not change your state unless directly ordered to. Be brief.'
         tasks = []
         for item in self.scene_objects_prompts.items():
             k, v = item
@@ -82,7 +82,7 @@ class Game():
         return game_state
             
     async def initialize_engine_simulator(self):
-        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be very brief unless talking directly to the player. I am the game designer.'
+        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be very brief unless talking directly to the player. I am the game designer. DO NOT add details or descriptions to any aspect of the game. Creating extra details is extraneous and detracts from the game experience.'
         game_state = await self.get_game_state()
         game_string = str(game_state)
         engine_initialization_prompt = f'This is the current game state: {game_string}'

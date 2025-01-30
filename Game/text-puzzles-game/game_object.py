@@ -8,6 +8,7 @@ class GameObject():
         self.progress_queue = ''
         self._my_history=[]
         self.progress_lock = asyncio.Lock()
+        self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
 
     async def get_progress_queue(self):        
         async with self.progress_lock:
