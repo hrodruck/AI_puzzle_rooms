@@ -39,7 +39,13 @@ class Game():
             self.game_progress_queue += message
 
     def set_scene(self, scene_description, winning_message= None, losing_message=None):
-        self.scene_objects_prompts = scene_description
+        if 'prompts' in scene_description.keys(): #else, it's the legacy rooms that only contain prompts directly
+            self.scene_objects_prompts = scene_description['prompts']
+            self.scene_objects_resposibilities = scene_description['responsibilities']
+        else:
+            self.scene_objects_prompts = scene_description
+            self.scene_objects_resposibilities = None
+        assert (self.scene_objects_resposibilities == None or self.scene_objects_resposibilities.keys() ==  self.scene_objects_prompts.keys())
         self.winning_message = winning_message
         self.losing_message = losing_message
 
@@ -51,25 +57,29 @@ class Game():
         designer_assistant.set_system_message(designer_assistant_prompt)
         await designer_assistant.process_game_input(designer_user_prompt)
         
-        game_object_template = 'You simulate an object within a room for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Remember to not change your state unless directly ordered to. Be brief.'
+        game_object_template = 'You simulate an object within a scene for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Important! Minimize changes when updating your state when possible'
+        game_object_template += '\nBe brief'
+        #initialize all gameobjects first so the dictionary size doesn't change during polling game progress
+        for k, v in self.scene_objects_prompts.items():
+            self.game_objects[k] = GameObject()
+            self.game_objects[k].object_name = k
+        
         tasks = []
-        for item in self.scene_objects_prompts.items():
-            k, v = item
+        for k, v in self.scene_objects_prompts.items():            
             applied_game_object_template = game_object_template
             applied_game_object_template = applied_game_object_template.replace('<object_name>', k)
             applied_game_object_template = applied_game_object_template.replace('<my_description>', v)
-            self.game_objects[k] = GameObject()
             self.game_objects[k].set_system_message(applied_game_object_template)
-            tasks.append(designer_assistant.process_game_input(applied_game_object_template))
+            tasks.append(designer_assistant.process_game_input(f'This is the general instruction for the current game object:\n\n {applied_game_object_template}\n\n. As an assistant game designer, determine the initial description for that game object. ', keep_history=False))
         designer_descriptions = await asyncio.gather(*tasks)
-        tasks=[]
+        
+        tasks = []
         for key, description in zip (self.game_objects.keys(), designer_descriptions):
             tasks.append(self.game_objects[key].process_game_input(f'this is your current state:"{description}"'))
         await asyncio.gather(*tasks)
-            
         
     async def get_game_state(self):
-        await self.add_to_progress_queue('<display_to_player>computing game state...\n</display_to_player>')
+        await self.add_to_progress_queue('<display_to_player>Computing game state...\n</display_to_player>')
         tasks = []
         summarization_prompt = 'What is your current state? Answer in first person: I...'
         
@@ -82,10 +92,13 @@ class Game():
         return game_state
             
     async def initialize_engine_simulator(self):
-        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. Be very brief unless talking directly to the player. I am the game designer. DO NOT add details or descriptions to any aspect of the game. Creating extra details is extraneous and detracts from the game experience.'
-        game_state = await self.get_game_state()
-        game_string = str(game_state)
-        engine_initialization_prompt = f'This is the current game state: {game_string}'
+        await self.add_to_progress_queue('<display_to_player>Initializing game engine...\n</display_to_player>')
+        game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. I am the game designer. DO NOT add details or descriptions to any aspect of the game. Creating extra details is extraneous and detracts from the game experience. Be brief and concise in all your statements. You are called "game engine".'
+        game_string = str(await self.get_game_state())
+        engine_initialization_prompt= ''
+        if self.scene_objects_resposibilities != None:
+            engine_initialization_prompt += f'This is every object in the room and their roles within the game: {str(self.scene_objects_resposibilities)}\n'
+        engine_initialization_prompt += f'This is the current game state: {game_string}'
         self.engine_game_object = EngineGameObject()
         self.engine_game_object.set_system_message(game_engine_sys_prompt)
         self.engine_game_object.winning_message = self.winning_message
@@ -93,6 +106,12 @@ class Game():
         await self.engine_game_object.process_game_input(engine_initialization_prompt)
         for k, v in self.game_objects.items():
             self.engine_game_object.add_active_game_object(k, v)
+        self.engine_game_object.game_string = game_string
+        self.engine_game_object.object_name = 'game_engine'
+        if self.scene_objects_resposibilities != None:
+            self.engine_game_object.roles_string = str(self.scene_objects_resposibilities)
+        else:
+            self.engine_game_object.roles_string = ''
             
     async def process_input(self, p_in):
         player_response, has_ended = await self.engine_game_object.process_player_input(p_in)

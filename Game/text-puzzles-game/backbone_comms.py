@@ -18,10 +18,10 @@ class BackboneComms():
     
     
     async def read_comms_queue(self):
-        async with self.progress_lock:
-            if len(self._comms_queue)>0:
-                yield self._comms_queue
-                self._comms_queue = ''
+        #async with self.progress_lock:
+        if len(self._comms_queue)>0:
+            yield self._comms_queue
+            self._comms_queue = ''
         await asyncio.sleep(0.02)
 
     def extract_json_between_markers(self, text):
@@ -91,28 +91,28 @@ class BackboneComms():
             response = await self.chat_openai_backbone(history, json)
         else:
             response = await self.chat_ollama_backbone(history, json)
-        async with self.progress_lock:
-            self._comms_queue += f"\n{response}"
+        #async with self.progress_lock:
+        self._comms_queue += f"\n{response}"
         return response
 
     async def chat_outer(self, user_message, user_history=[], json=False, keep_history=True):
         #the first message should be the system prompt
         assert(user_history[0]['role']=='system')
+        assert(len(user_history)>0) # system prompt must be set
         if keep_history:
-                if len(user_history)>1:
-                    user_history.append(user_history[0])
-                user_history.append(
-                    {'role': 'user', 'content':user_message}
-                )
-                response = await self._chat_inner(user_history, json)
-                user_history.append({'role': 'assistant', 'content': response})
+            if len(user_history)>2:
+                user_history.append(user_history[0]) #repeat system prompt
+            user_history.append(
+                {'role': 'user', 'content':user_message}
+            )
+            response = await self._chat_inner(user_history, json)
+            user_history.append({'role': 'assistant', 'content': response})
         else:
-            '''Important! there may be some bug in this path. Setting keep_history as true everywhere for now...'''
             history_len = len(user_history)
             temp_history = deepcopy(user_history)
             #repeat system prompt if it's not the first history entry, checking if len(user_history)>1
-            if len(temp_history)>1:
-                temp_history.append(temp_history[0])
+            if len(temp_history)>2:
+                temp_history.append(temp_history[0]) #repeat system prompt
             temp_history.append(
                 {'role': 'user', 'content':user_message}
             )
