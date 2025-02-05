@@ -1,3 +1,4 @@
+from copy import deepcopy
 import asyncio
 from backbone_comms import BackboneComms
 
@@ -9,11 +10,12 @@ class GameObject():
         self._my_history=[]
         self.progress_lock = asyncio.Lock()
         self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+        self.object_name = ''
 
     async def get_progress_queue(self):        
         async with self.progress_lock:
             async for item in self.comms_backbone.read_comms_queue():
-                self.progress_queue += item #do not directly yield the item because there may be more data from add_to_progress_queue
+                self.progress_queue += f'{self.object_name}: {item}\n.\n' #do not directly yield the item because there may be more data from add_to_progress_queue
                 yield self.progress_queue
                 self.progress_queue = ''
         await asyncio.sleep(0.02)
@@ -30,7 +32,18 @@ class GameObject():
         return await self._chat_with_backbone(input_contents, self._my_history, json, keep_history)
         
     def set_system_message(self, message_contents):
-        if len(self._my_history)==0:
-            self._my_history.append({'role':'system', 'content':message_contents})
-        else:
-            self._my_history[0] = {'role':'system', 'content':message_contents}
+        assert (len(self._my_history)==0)
+        self._my_history.append({'role':'system', 'content':message_contents})
+        
+    
+    def history_checkpoint(self):
+        assert (len(self._my_history) % 3 ==0) #system, user, assistant
+        self._checkpoint_len = len(self._my_history)
+            
+    def forget_old_history(self):
+        assert (len(self._my_history) % 3 ==0) #system, user, assistant
+        forgetting_len = self._checkpoint_len
+        forgetting_len = min(forgetting_len, len(self._my_history)-3) #leave at least one (system, user, assitant) exchange. It will be the most recent one
+        self._my_history = deepcopy(self._my_history[forgetting_len:])
+        assert (len(self._my_history) % 3 ==0)
+        print (len(self._my_history))

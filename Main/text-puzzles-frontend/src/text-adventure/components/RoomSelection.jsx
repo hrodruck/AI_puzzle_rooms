@@ -163,8 +163,9 @@ const RoomSelection = () => {
         <option value="room_2">Two Doors Tutorial</option>
         <option value="room_3">Kitchen</option>
         <option value="room_4">Doormat Challenge</option>
-        <option value="room_5">Security Lab</option>
         <option value="room_6">Submarine</option>
+        <option value="mage_tower_room_entrance_lvl_1">Mage Tower Entrance Lvl 1</option>
+        <option value="mage_tower_room_entrance_lvl_2">Mage Tower Entrance Lvl 2</option>
       </RoomSelect>
       <details>
         <summary><h3>Or Create Your Custom Room:</h3></summary>

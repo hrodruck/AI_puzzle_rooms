@@ -1,4 +1,2 @@
-Making it so you can play in the phone while doing something else and the AI reads the game's response to you out loud so you just need to stop and type commands
-Stop players from using multiple actions in one command (maybe)
-Autoforget older interactions so as to Always fit the context window (maybe)
----
+Making it so you can play in the phone while doing something else and the AI reads the game's response to you out loud so you just need to stop and type commands (maybe)
+------
