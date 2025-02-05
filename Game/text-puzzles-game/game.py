@@ -58,7 +58,7 @@ class Game():
         await designer_assistant.process_game_input(designer_user_prompt)
         
         game_object_template = 'You simulate an object within a scene for a videogame. Keep track of your own description, using common sense to answer questions about the object or change it. Do not spontaneously add characteristics to the simulated object without being provoked to do so. Do not disappear after being used. The object you simulate is a <object_name>. Your initial description is \"<my_description>\". That initial description might have changed. Important! Minimize changes when updating your state when possible'
-        game_object_template += '\nBe brief'
+        game_object_template += '\nBe extremely brief'
         #initialize all gameobjects first so the dictionary size doesn't change during polling game progress
         for k, v in self.scene_objects_prompts.items():
             self.game_objects[k] = GameObject()
