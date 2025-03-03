@@ -5,16 +5,25 @@ import re
 import json
 from ollama import AsyncClient
 from openai import AsyncOpenAI
+from together import AsyncTogether
     
 class BackboneComms():    
     
     def __init__(self):
         self._comms_queue = ''
         self.progress_lock = asyncio.Lock()
-        self.openai_backbone = bool(os.getenv('USE_EXTERNAL_BACKBONE'))
+        self.openai_backbone = os.getenv('USE_OPENAI_BACKBONE') == 'True'
+        
+        #TOGETHER HAS A TERRIBLE JSON MODE as of now
+        
+        self.together_ai_backbone = os.getenv('USE_TOGETHER_BACKBONE') == 'True'
         self.presence_penalty = 1.0 #maybe that's specific to deepinfra?
         self.presence_penalty_json = 2.0 #maybe that's specific to deepinfra?
         self.model_string = "" #needs to be set outside of this class
+        if (self.together_ai_backbone and self.openai_backbone):
+            print ('Choose between together or openai backbone, not both!')
+        assert (not (self.together_ai_backbone and self.openai_backbone))
+        
     
     
     async def read_comms_queue(self):
@@ -38,12 +47,33 @@ class BackboneComms():
         return match
             
     def load_json_from_llm(self, text):
-        if self.openai_backbone:
-            json_text = self.extract_json_between_markers(text)
-        else:
-            json_text = text
+        json_text = self.extract_json_between_markers(text)
+        json_text = json_text.replace('False', 'false')
+        json_text = json_text.replace('True', 'true')
         return json.loads(json_text)
 
+    async def chat_together_backbone(self, history, json=False):
+        client = AsyncTogether(
+            api_key=os.getenv('TOGETHER_KEY'),
+        )
+        
+        if json:
+            chat_completion = await client.chat.completions.create(
+                model=self.model_string,
+                messages=history,
+                response_format={"type": "json_object"},
+            )
+        else:
+            chat_completion = await client.chat.completions.create(
+                model=self.model_string,
+                messages=history,
+            )
+        
+        content = chat_completion.choices[0].message.content
+        print(content)
+        print('.')
+        return content
+    
     async def chat_openai_backbone(self, history, json=False):
         openai = AsyncOpenAI(
             api_key=os.getenv('OPEN_API_KEY'),
@@ -89,6 +119,8 @@ class BackboneComms():
     async def _chat_inner(self, history, json=False):
         if self.openai_backbone:
             response = await self.chat_openai_backbone(history, json)
+        elif self.together_ai_backbone:
+            response = await self.chat_together_backbone(history, json)
         else:
             response = await self.chat_ollama_backbone(history, json)
         #async with self.progress_lock:

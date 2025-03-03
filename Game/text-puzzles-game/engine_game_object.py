@@ -13,8 +13,8 @@ class EngineGameObject(GameObject):
         self.winning_message = '' #set externally
         self.losing_message = '' #set externally
         self.game_string = '' #set internally later
-        #self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-        self.comms_backbone.model_string = "meta-llama/Meta-Llama-3.1-405B-Instruct"
+        self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+        #self.comms_backbone.model_string = "meta-llama/Meta-Llama-3.1-405B-Instruct"
         self.round_counter = 0
         self.update_game_state_task = None
         self.roles_string = ''
@@ -58,6 +58,20 @@ class EngineGameObject(GameObject):
         if multiple_actions:
             return 'Please perform one action per turn\n', False
         
+        
+        #related to the speed optimization
+        if self.round_counter > 0:
+            self.game_string = await self.update_game_state_task
+        
+        self.aux_bluff_history = deepcopy(self._my_history)
+        self.aux_success_history = deepcopy(self._my_history)
+        my_history_initial_len = len(self._my_history)
+        
+        multiple_actions_prompt = f'Is the player trying to perform multiple actions with a single input? Their input was {player_input}. Lean towards saying the player performed one action. That is, if you\'re not sure, consider it to be one action.' +  'Return a json like {multiple:True} or {multiple:False} to indicate whether the player has performed multiple actions.'
+        multiple_actions = await self.get_binary_answer(multiple_actions_prompt, self._my_history, 'multiple')
+        if multiple_actions:
+            return 'Please perform one action per turn\n', False
+        
         '''
         #related to the speed optimization
         if self.round_counter > 0:
@@ -65,9 +79,11 @@ class EngineGameObject(GameObject):
         '''
         game_object_names = list(self.active_game_objects.keys())
         
-        bluff, success = await asyncio.gather(self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.ingame_success_check(player_input, game_object_names, self.game_string))
-        #bluff = await self.sanity_bluff_check(player_input, game_object_names, self.game_string)
-        #success = await self.ingame_success_check(player_input, game_object_names, self.game_string)
+        tasks = [self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.ingame_success_check(player_input, game_object_names, self.game_string)]
+        bluff_1, bluff_2, success = await asyncio.gather(*tasks)
+        bluff = bluff_1 or bluff_2 #this is to mitigate cases where the engine might detect a false negative bluff.
+        
+        response_prompt = ''
         
         response_prompt = ''
         
@@ -94,11 +110,9 @@ class EngineGameObject(GameObject):
             Do not talk to the player as if you're in a game. Maintain the illusion of fantasy!\
             Remember the player's initial command: {player_input}."
         
-        await self.add_to_progress_queue("<display_to_player>##Generating response to the player...##\n</display_to_player>")
         response_to_player = await self._chat_with_backbone(response_prompt, self._my_history, keep_history=True)
         response_to_player = '\n\n' + response_to_player
         
-        await self.add_to_progress_queue("<display_to_player>##Checking if the game has ended...##\n\n</display_to_player>")
         ending_message, has_ended = await self.check_ending()
         if has_ended:
             response_to_player += ending_message
@@ -108,10 +122,9 @@ class EngineGameObject(GameObject):
         for k, v in self.active_game_objects.items():
             v.forget_old_history()
         
-        '''
         #Speed optimization: the game objects update asynchronously while the player reads the message from the game and decides what to do
         self.update_game_state_task = asyncio.create_task(self.send_same_broadcast(f'This is what the game engine said to the player this round: {response_to_player}\n. Consider those events.'))
-        '''
+        
         
         self.round_counter += 1
         
@@ -131,13 +144,22 @@ class EngineGameObject(GameObject):
             However, don't forbid interactions for the sake of just intended player experience alone. If it's a possible and plausible action, allow it.\
             Do not block the player action because of danger. This is a game and the player should be able to put themselves in danger if they so choose.\
             Be brief and concise in all your statements."
+
+        bluff_examples_prompt = "Commands that would make the player bypass challenges such as:\
+                                'I win'\
+                                'I solve the riddle'\
+                                'I defeat the enemy'\
+                                "
+
         
         await self._chat_with_backbone(bluff_prompt, self.aux_bluff_history)
         bluff_answers = await self.ask_away(game_object_names, self.aux_bluff_history, player_input)
         
         bluff_eval_prompt = f"Here are the answers of each game object: {bluff_answers}.\n Is the player desired action ({player_input}) reasonable after all?\
             However, if the player is relying on knowledge they don't possess, that is a bluff.\
-            If the answer is ambiguous or a borderline case, you should consider the player is not bluffing."
+            Do not let the player perform actions such as the following, they are bluffs:{bluff_examples_prompt}."
+            
+        
         await self._chat_with_backbone (bluff_eval_prompt, self.aux_bluff_history)
         
         binary_bluff_prompt="Return wether the player was bluffing or not. Return a json like {bluff:True} or {bluff:False}. Do not mention previous questions or answers, only a json with the \"bluff\" key and either the value True or the value False. Your response should be based on your previous reasoning." 
