@@ -63,11 +63,27 @@ class EngineGameObject(GameObject):
         if self.round_counter > 0:
             self.game_string = await self.update_game_state_task
         
+        self.aux_bluff_history = deepcopy(self._my_history)
+        self.aux_success_history = deepcopy(self._my_history)
+        my_history_initial_len = len(self._my_history)
+        
+        multiple_actions_prompt = f'Is the player trying to perform multiple actions with a single input? Their input was {player_input}. Lean towards saying the player performed one action. That is, if you\'re not sure, consider it to be one action.' +  'Return a json like {multiple:True} or {multiple:False} to indicate whether the player has performed multiple actions.'
+        multiple_actions = await self.get_binary_answer(multiple_actions_prompt, self._my_history, 'multiple')
+        if multiple_actions:
+            return 'Please perform one action per turn\n', False
+        
+        '''
+        #related to the speed optimization
+        if self.round_counter > 0:
+            self.game_string = await self.update_game_state_task
+        '''
         game_object_names = list(self.active_game_objects.keys())
         
         tasks = [self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.ingame_success_check(player_input, game_object_names, self.game_string)]
         bluff_1, bluff_2, success = await asyncio.gather(*tasks)
         bluff = bluff_1 or bluff_2 #this is to mitigate cases where the engine might detect a false negative bluff.
+        
+        response_prompt = ''
         
         response_prompt = ''
         
@@ -106,7 +122,6 @@ class EngineGameObject(GameObject):
         for k, v in self.active_game_objects.items():
             v.forget_old_history()
         
-        
         #Speed optimization: the game objects update asynchronously while the player reads the message from the game and decides what to do
         self.update_game_state_task = asyncio.create_task(self.send_same_broadcast(f'This is what the game engine said to the player this round: {response_to_player}\n. Consider those events.'))
         
@@ -129,12 +144,13 @@ class EngineGameObject(GameObject):
             However, don't forbid interactions for the sake of just intended player experience alone. If it's a possible and plausible action, allow it.\
             Do not block the player action because of danger. This is a game and the player should be able to put themselves in danger if they so choose.\
             Be brief and concise in all your statements."
-            
+
         bluff_examples_prompt = "Commands that would make the player bypass challenges such as:\
                                 'I win'\
                                 'I solve the riddle'\
                                 'I defeat the enemy'\
                                 "
+
         
         await self._chat_with_backbone(bluff_prompt, self.aux_bluff_history)
         bluff_answers = await self.ask_away(game_object_names, self.aux_bluff_history, player_input)
@@ -143,6 +159,7 @@ class EngineGameObject(GameObject):
             However, if the player is relying on knowledge they don't possess, that is a bluff.\
             Do not let the player perform actions such as the following, they are bluffs:{bluff_examples_prompt}."
             
+        
         await self._chat_with_backbone (bluff_eval_prompt, self.aux_bluff_history)
         
         binary_bluff_prompt="Return wether the player was bluffing or not. Return a json like {bluff:True} or {bluff:False}. Do not mention previous questions or answers, only a json with the \"bluff\" key and either the value True or the value False. Your response should be based on your previous reasoning." 
