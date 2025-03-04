@@ -44,10 +44,10 @@ class EngineGameObject(GameObject):
             await self.add_to_progress_queue("The game has ended!")
             return "The game has ended!\n\n", True
         
-        #if self.round_counter % 2 == 0:
-        self.history_checkpoint()
-        for k, v in self.active_game_objects.items():
-            v.history_checkpoint() 
+        if self.round_counter % 2 == 0:
+            self.history_checkpoint()
+            for k, v in self.active_game_objects.items():
+                v.history_checkpoint() 
         
         self.aux_bluff_history = deepcopy(self._my_history)
         self.aux_success_history = deepcopy(self._my_history)
@@ -79,9 +79,8 @@ class EngineGameObject(GameObject):
         '''
         game_object_names = list(self.active_game_objects.keys())
         
-        tasks = [self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.ingame_success_check(player_input, game_object_names, self.game_string)]
-        bluff_1, bluff_2, success = await asyncio.gather(*tasks)
-        bluff = bluff_1 or bluff_2 #this is to mitigate cases where the engine might detect a false negative bluff.
+        tasks = [ self.sanity_bluff_check(player_input, game_object_names, self.game_string), self.ingame_success_check(player_input, game_object_names, self.game_string)]
+        bluff, success = await asyncio.gather(*tasks)
         
         response_prompt = ''
         
@@ -91,15 +90,15 @@ class EngineGameObject(GameObject):
             await self.add_to_progress_queue("<display_to_player>You succeeded in your action! Pondering consequences...\n</display_to_player>")
             
             await self.add_to_progress_queue("<display_to_player>##Updating game state...##\n</display_to_player>")
-            self.game_string = str(await self.send_same_broadcast(f"It seems the player did an action. The action I'm talking about is {player_input}. Reply to this message with your new state."))
+            self.game_string = str(await self.send_same_broadcast(f"It seems the player did an action. The action I'm talking about is {player_input}. Reply to this message with your new state. This is the current round count: {self.round_counter}"))
             await self.update_current_game_state()
             response_prompt += f"This is the state of every object in the game at the end of the round:{self.game_string}\n."
         else:
             await self.add_to_progress_queue("<display_to_player>You failed in your action! Reflecting on causes...\n</display_to_player>")
             if bluff:
-                self.aux_failure_history = self.aux_bluff_history[my_history_initial_len:]
+                self.aux_failure_history = deepcopy(self.aux_bluff_history[my_history_initial_len:])
             else: #that is, "if not sucess"
-                self.aux_failure_history = self.aux_success_history[my_history_initial_len:]
+                self.aux_failure_history = deepcopy(self.aux_success_history[my_history_initial_len:])
             failure_prompt = f"It seems the player has failed in attempting an action. The action I'm talking about is {player_input}. Reflect on the reasons for this failure."
             failure_reasoning = await self._chat_with_backbone(failure_prompt, self.aux_failure_history, keep_history=False)
             response_prompt += f'These seem to have been the reasons for player failure: {failure_reasoning}\n'
@@ -117,13 +116,13 @@ class EngineGameObject(GameObject):
         if has_ended:
             response_to_player += ending_message
         
-        #if self.round_counter % 2 == 1:
-        self.forget_old_history()
-        for k, v in self.active_game_objects.items():
-            v.forget_old_history()
+        if self.round_counter % 2 == 1:
+            self.forget_old_history()
+            for k, v in self.active_game_objects.items():
+                v.forget_old_history()
         
         #Speed optimization: the game objects update asynchronously while the player reads the message from the game and decides what to do
-        self.update_game_state_task = asyncio.create_task(self.send_same_broadcast(f'This is what the game engine said to the player this round: {response_to_player}\n. Consider those events.'))
+        self.update_game_state_task = asyncio.create_task(self.send_same_broadcast(f'This is what the game engine said to the player this round: {response_to_player}\n. Consider those events. This is the current round counter: {self.round_counter}'))
         
         
         self.round_counter += 1

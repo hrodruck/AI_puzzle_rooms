@@ -78,6 +78,7 @@ class Game():
             tasks.append(self.game_objects[key].process_game_input(f'this is your current state:"{description}"'))
         await asyncio.gather(*tasks)
         
+        
     async def get_game_state(self):
         await self.add_to_progress_queue('<display_to_player>Computing game state...\n</display_to_player>')
         tasks = []
@@ -95,6 +96,9 @@ class Game():
         await self.add_to_progress_queue('<display_to_player>Initializing game engine...\n</display_to_player>')
         game_engine_sys_prompt = 'You are a text game engine simulator. Your task is to reply using common sense to the questions about the player\'s text input to the game. I am the game designer. DO NOT add details or descriptions to any aspect of the game. Creating extra details is extraneous and detracts from the game experience. Be brief and concise in all your statements. You are called "game engine".'
         game_string = str(await self.get_game_state())
+        for key in self.game_objects.keys():
+            asyncio.create_task(self.game_objects[key].process_game_input(f'this the state of all objects:"{game_string}"'))
+        
         engine_initialization_prompt= ''
         if self.scene_objects_resposibilities != None:
             engine_initialization_prompt += f'This is every object in the room and their roles within the game: {str(self.scene_objects_resposibilities)}\n'

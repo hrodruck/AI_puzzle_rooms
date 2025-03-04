@@ -9,6 +9,7 @@ class GameObject():
         self.progress_queue = ''
         self._my_history=[]
         self.progress_lock = asyncio.Lock()
+        self.processing_lock = asyncio.Lock()
         self.comms_backbone.model_string = "meta-llama/Llama-3.3-70B-Instruct-Turbo"
         #self.comms_backbone.model_string = "meta-llama/Meta-Llama-3.1-405B-Instruct"
 
@@ -31,7 +32,12 @@ class GameObject():
             self.progress_queue += message
 
     async def process_game_input(self, input_contents, json=False, keep_history=True):
-        return await self._chat_with_backbone(input_contents, self._my_history, json, keep_history)
+        if keep_history:
+            async with self.processing_lock:
+                reply = await self._chat_with_backbone(input_contents, self._my_history, json, keep_history)
+        else: #no need for lock
+            reply = await self._chat_with_backbone(input_contents, self._my_history, json, keep_history)
+        return reply
         
     def set_system_message(self, message_contents):
         assert (len(self._my_history)==0)
