@@ -1,2 +1,1 @@
-Making it so you can play in the phone while doing something else and the AI reads the game's response to you out loud so you just need to stop and type commands (maybe)
-------
+Integrate the game into a messaging app. Something like a telegram or discord bot. Even if made as a standalone application, make it look like a chatting app due to the asynchronous nature of the game
